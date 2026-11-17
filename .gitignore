@@ -1,0 +1,8 @@
+# Visual Studio のローカル設定
+.vs/
+*.vcxproj.user
+
+# ビルド出力
+x64/
+Debug/
+Release/
