@@ -102,9 +102,6 @@
     <ClCompile Include="keyboard.cpp">
       <Filter>common\Input</Filter>
     </ClCompile>
-    <ClCompile Include="controller.cpp">
-      <Filter>common\Input</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h">
@@ -159,9 +156,6 @@
       <Filter>common\Input</Filter>
     </ClInclude>
     <ClInclude Include="keyboard.h">
-      <Filter>common\Input</Filter>
-    </ClInclude>
-    <ClInclude Include="controller.h">
       <Filter>common\Input</Filter>
     </ClInclude>
   </ItemGroup>
