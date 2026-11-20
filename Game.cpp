@@ -1,14 +1,15 @@
 
 //Game.cpp
 
-#include	"Manager.h"
-#include	"direct3d.h"
-#include	"shader.h"
-#include	"sprite.h"
-#include	"Game.h"
-#include	"keyboard.h"
-#include	"Audio.h"
-#include	"camera.h"
+#include "Manager.h"
+#include "direct3d.h"
+#include "shader.h"
+#include "sprite.h"
+#include "Game.h"
+#include "keyboard.h"
+#include "Audio.h"
+#include "camera.h"
+#include "controller.h"
 
 #include "field.h"
 
@@ -22,7 +23,7 @@ void Game_Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 	Field_Initialize(pDevice, pContext);//3Dテスト初期化
 
 
-	g_BgmID = LoadAudio("asset\\Audio\\bgm.wav");	//サウンドロード
+	// g_BgmID = LoadAudio("asset\\Audio\\bgm.wav");	//サウンドロード
 	//PlayAudio(g_BgmID, true);	//再生開始（ループあり）
 	//PlayAudio(g_BgmID);			//再生開始（ループなし）
 	//PlayAudio(g_BgmID, false);	//再生開始（ループなし）
@@ -49,13 +50,20 @@ void Game_Finalize()
 {
 	Field_Finalize();
 	Camera_Finalize();
-	UnloadAudio(g_BgmID);//サウンドの解放
+	// UnloadAudio(g_BgmID);//サウンドの解放
 }
 
 void Game_Update()
 {
 	//更新処理
 	Camera_Update();					//一番上
+	GamepadUpdate();
+
+	if (GamepadIsDown(1))
+	{
+		OutputDebugStringA("Aボタン入力\n");
+	}
+
 	Field_Update();
 
 }
