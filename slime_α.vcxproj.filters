@@ -105,6 +105,9 @@
     <ClCompile Include="controller.cpp">
       <Filter>common\Input</Filter>
     </ClCompile>
+    <ClCompile Include="collision.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h">
@@ -163,6 +166,9 @@
     </ClInclude>
     <ClInclude Include="controller.h">
       <Filter>common\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="collision.h">
+      <Filter>Game</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
