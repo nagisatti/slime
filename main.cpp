@@ -12,6 +12,7 @@
 #include "keyboard.h"
 #include "Manager.h"
 #include "Audio.h"	//<<<<<<<<<<<<<追加
+#include "controller.h"
 
 
 ///////////////////////////////////////////
@@ -66,7 +67,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	wc.lpszClassName = CLASS_NAME;	//この仕様書の名前
 	wc.hInstance = hInstance;	//このアプリケーションのこと
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);//カーソルの種類
-	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND+1 );//ウィンドウの背景色は黒
+	wc.hbrBackground = (HBRUSH)(COLOR_BACKGROUND + 1);//ウィンドウの背景色は黒
 	RegisterClass(&wc);	//構造体をWindowsへセット
 
 	//クライアント領域のサイズを表す矩形 (左からleft, top, right, bottom)
@@ -81,7 +82,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 	//ウィンドウの作成
 	HWND	hWnd = CreateWindow(
-		CLASS_NAME,	
+		CLASS_NAME,
 		WINDOW_CAPTION,
 		window_style,
 		CW_USEDEFAULT,
@@ -94,6 +95,10 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 		NULL
 	);
 
+	// padの初期化処理
+	GamepadInitialize(hInstance, hWnd);
+
+
 	//作成したウィンドウを表示する
 	ShowWindow(hWnd, nCmdShow);//引数に従って表示、または非表示
 	//ウィンドウ内部の更新要求
@@ -105,7 +110,7 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 	Shader_Initialize(Direct3D_GetDevice(), Direct3D_GetDeviceContext()); // シェーダの初期化
 	InitializeSprite();//スプライトの初期化
 
-	InitAudio();	//サウンドの初期化
+	//InitAudio();	//サウンドの初期化
 
 
 
@@ -125,12 +130,12 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 	//終了メッセージが来るまでループする
 	do {
-		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) 
+		if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
 		{ // ウィンドウメッセージが来ていたら
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		else 
+		else
 		{ // ゲームの処理
 			dwCurrentTime = timeGetTime();
 			if ((dwCurrentTime - dwFPSLastTime) >= 1000)
@@ -147,9 +152,9 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 				dwExecLastTime = dwCurrentTime;//現在のタイマーと保存
 #ifdef _DEBUG
 				//ウィンドウキャプションへ現在のFPSを表示
-				wsprintf(g_DebugStr, WINDOW_CAPTION );
+				wsprintf(g_DebugStr, WINDOW_CAPTION);
 				wsprintf(&g_DebugStr[strlen(g_DebugStr)],
-									" FPS : %d", g_CountFPS);
+					" FPS : %d", g_CountFPS);
 				SetWindowText(hWnd, g_DebugStr);
 #endif
 
@@ -167,13 +172,14 @@ int APIENTRY WinMain(HINSTANCE hInstance,
 
 		}
 	} while (msg.message != WM_QUIT);
-	
+
 	Manager_Finalize();
 
 
-	UninitAudio();		//サウンドの終了
+	//UninitAudio();		//サウンドの終了
 
 	Shader_Finalize(); // シェーダの終了処理
+	GamepadFinalize();
 	FinalizeSprite();	//スプライトの終了処理
 	/////////////////////////////////////////
 	Direct3D_Finalize();
@@ -197,39 +203,39 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	switch (uMsg)
 	{
-		case WM_ACTIVATEAPP:
-		case WM_SYSKEYDOWN:
-		case WM_KEYUP:
-		case WM_SYSKEYUP:
-		     Keyboard_ProcessMessage(uMsg, wParam, lParam);
-			 break;
+	case WM_ACTIVATEAPP:
+	case WM_SYSKEYDOWN:
+	case WM_KEYUP:
+	case WM_SYSKEYUP:
+		Keyboard_ProcessMessage(uMsg, wParam, lParam);
+		break;
 
-		case WM_KEYDOWN:	//キーが押された
-			if (wParam == VK_ESCAPE)//押されたのはESCキー
-			{
-				//ウィンドウを閉じたいリクエストをWindowsに送る
-				SendMessage(hWnd, WM_CLOSE, 0, 0);
-			}
+	case WM_KEYDOWN:	//キーが押された
+		if (wParam == VK_ESCAPE)//押されたのはESCキー
+		{
+			//ウィンドウを閉じたいリクエストをWindowsに送る
+			SendMessage(hWnd, WM_CLOSE, 0, 0);
+		}
 
-			Keyboard_ProcessMessage(uMsg, wParam, lParam);
-			break;
-		case WM_CLOSE:	//ウィンドウを閉じなさい命令				
-			//if (
-			//	MessageBox(hWnd, "本当に終了してよろしいですか？",
-			//		"確認", MB_OKCANCEL | MB_DEFBUTTON2) == IDOK
-			//	)
-			//{//OKが押されたとき
-			//	DestroyWindow(hWnd);//終了する手続きをWindowsへリクエスト
-			//}
-			//else
-			//{
-			//	return 0;	//やっぱり終わらない
-			//}
+		Keyboard_ProcessMessage(uMsg, wParam, lParam);
+		break;
+	case WM_CLOSE:	//ウィンドウを閉じなさい命令				
+		//if (
+		//	MessageBox(hWnd, "本当に終了してよろしいですか？",
+		//		"確認", MB_OKCANCEL | MB_DEFBUTTON2) == IDOK
+		//	)
+		//{//OKが押されたとき
+		//	DestroyWindow(hWnd);//終了する手続きをWindowsへリクエスト
+		//}
+		//else
+		//{
+		//	return 0;	//やっぱり終わらない
+		//}
 
-			//break;
-		case WM_DESTROY:	//終了してOKですよ
-			PostQuitMessage(0);		//自分のメッセージに０を送る
-			break;
+		//break;
+	case WM_DESTROY:	//終了してOKですよ
+		PostQuitMessage(0);		//自分のメッセージに０を送る
+		break;
 
 	}
 
