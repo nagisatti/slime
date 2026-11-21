@@ -27,17 +27,20 @@ class Character
 {
 private:
 	// ç¿ïW
-	XMFLOAT2 pos;
-	float hp;
+	XMFLOAT2 m_pos;
+	float m_hp;
 
 public:
 	Character(XMFLOAT2 initialPos, float initialHp)
-		: pos(initialPos), hp(initialHp)
+		: m_pos(initialPos), m_hp(initialHp)
 	{
 	}
 
-	XMFLOAT2 GetPos() const { return pos; }
-	float GetHp() const { return hp; }
+	XMFLOAT2 GetPos() const { return m_pos; }
+	float GetHp() const { return m_hp; }
+
+	void SetPos(const XMFLOAT2& pos) { m_pos = pos; }
+	void SetHp(const float hp) { m_hp = hp; }
 
 };
 
