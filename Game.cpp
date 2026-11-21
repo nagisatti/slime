@@ -59,11 +59,6 @@ void Game_Update()
 	Camera_Update();					//ˆê”Ôã
 	GamepadUpdate();
 
-	if (GamepadIsDown(1))
-	{
-		OutputDebugStringA("Aƒ{ƒ^ƒ““ü—Í\n");
-	}
-
 	Field_Update();
 
 }
