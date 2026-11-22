@@ -18,6 +18,9 @@
 #include "keyboard.h"
 #include "collision.h"
 
+//確認用
+#include "shader.h"
+
 //*****************************************************************************
 // 定数
 //*****************************************************************************
@@ -35,9 +38,9 @@ struct TestBlock
 
 static constexpr TestBlock TEST_BLOCKS[] =
 {
-	{{0.0f, -3.0f}, {20.0f, 1.0f}},//床
-	{{4.0f, -2.0f}, {1.0f, 1.0f}},//壁
-	{{-3.0f, 0.0f}, {3.0f, 0.5f}},//浮いている足場
+	{{0.0f, 0.25f}, {6.0f, 0.5f}},//床
+	{{2.5f, 1.0f}, {0.5f, 1.0f}},//壁
+	{{-1.8f, 1.8f}, {1.2f, 0.3f}},//浮いている足場
 };
 
 //*****************************************************************************
@@ -78,7 +81,7 @@ static bool HitTestField(const XMFLOAT2& pos, const XMFLOAT2& size, XMFLOAT2& hi
 void PlayerInitialize()
 {
 	//emplace：凄い便利になった「new」みたいな感じ
-	g_player.emplace(XMFLOAT2{ 100.0f, 100.0f }, 10.0f);
+	g_player.emplace(XMFLOAT2{ 0.0f, 2.0f }, 10.0f);
 	
 }
 
