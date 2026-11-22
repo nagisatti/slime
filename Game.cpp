@@ -12,6 +12,8 @@
 #include "controller.h"
 
 #include "field.h"
+#include <Xinput.h>
+#include "fade.h"
 
 static	int		g_BgmID = NULL;	//サウンド管理ID
 static LIGHTOBJECT GlobalLight;
@@ -55,6 +57,13 @@ void Game_Finalize()
 
 void Game_Update()
 {
+   if (IsControllerButtonDownTrigger(XINPUT_GAMEPAD_BACK) ||
+		Keyboard_IsKeyDownTrigger(KK_SPACE))
+	{
+		XMFLOAT4 color(0.0f, 0.0f, 0.0f, 1.0f);
+		SetFade(40.0f, color, FADE_OUT, SCENE_RESULT);
+		return;
+	}
 	//更新処理
 	Camera_Update();					//一番上
 	GamepadUpdate();
