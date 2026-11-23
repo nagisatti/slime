@@ -9,36 +9,42 @@
 #include	"keyboard.h"
 #include	"Audio.h"
 #include	"camera.h"
+#include    "controller.h"
 
 #include "field.h"
+#include <Xinput.h>
+#include "fade.h"
 
-static	int		g_BgmID = NULL;	//ƒTƒEƒ“ƒhŠÇ—ID
+#include "player.h"
+
+static	int		g_BgmID = NULL;	//ï¿½Tï¿½Eï¿½ï¿½ï¿½hï¿½Ç—ï¿½ID
 static LIGHTOBJECT GlobalLight;
 
 void Game_Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 {
 
 	Camera_Initialize();
-	Field_Initialize(pDevice, pContext);//3DƒeƒXƒg‰Šú‰»
+	Field_Initialize(pDevice, pContext);//3Dï¿½eï¿½Xï¿½gï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	PlayerInitialize();
 
 
-	g_BgmID = LoadAudio("asset\\Audio\\bgm.wav");	//ƒTƒEƒ“ƒhƒ[ƒh
-	//PlayAudio(g_BgmID, true);	//Ä¶ŠJniƒ‹[ƒv‚ ‚èj
-	//PlayAudio(g_BgmID);			//Ä¶ŠJniƒ‹[ƒv‚È‚µj
-	//PlayAudio(g_BgmID, false);	//Ä¶ŠJniƒ‹[ƒv‚È‚µj
+	//g_BgmID = LoadAudio("asset\\Audio\\bgm.wav");	//ï¿½Tï¿½Eï¿½ï¿½ï¿½hï¿½ï¿½ï¿½[ï¿½h
+	//PlayAudio(g_BgmID, true);	//ï¿½Äï¿½ï¿½Jï¿½nï¿½iï¿½ï¿½ï¿½[ï¿½vï¿½ï¿½ï¿½ï¿½j
+	//PlayAudio(g_BgmID);			//ï¿½Äï¿½ï¿½Jï¿½nï¿½iï¿½ï¿½ï¿½[ï¿½vï¿½È‚ï¿½ï¿½j
+	//PlayAudio(g_BgmID, false);	//ï¿½Äï¿½ï¿½Jï¿½nï¿½iï¿½ï¿½ï¿½[ï¿½vï¿½È‚ï¿½ï¿½j
 
-	GlobalLight.SetEnable(true);	//ƒ‰ƒCƒgON
+	GlobalLight.SetEnable(true);	//ï¿½ï¿½ï¿½Cï¿½gON
 
-	XMVECTOR dir = XMVectorSet(0.5f, -1.0f, 0.5f, 0.0f);//Œõ‚Ì•ûŒü
+	XMVECTOR dir = XMVectorSet(0.5f, -1.0f, 0.5f, 0.0f);//ï¿½ï¿½ï¿½Ì•ï¿½ï¿½ï¿½
 	dir = XMVector3Normalize(XMVector3Normalize(dir));
 	XMFLOAT4 d;
 	XMStoreFloat4(&d, dir);
-	GlobalLight.SetDirection(d);			//Œõ‚Ì•ûŒüİ’è
+	GlobalLight.SetDirection(d);			//ï¿½ï¿½ï¿½Ì•ï¿½ï¿½ï¿½ï¿½İ’ï¿½
 
-	d = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);	//ƒ‰ƒCƒgFİ’è
+	d = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);	//ï¿½ï¿½ï¿½Cï¿½gï¿½Fï¿½İ’ï¿½
 	GlobalLight.SetDiffuse(d);
 
-	d = XMFLOAT4(0.65f, 0.65f, 0.95f, 1.0f);	//ƒ‰ƒCƒgƒAƒ“ƒrƒGƒ“ƒgFİ’è
+	d = XMFLOAT4(0.65f, 0.65f, 0.95f, 1.0f);	//ï¿½ï¿½ï¿½Cï¿½gï¿½Aï¿½ï¿½ï¿½rï¿½Gï¿½ï¿½ï¿½gï¿½Fï¿½İ’ï¿½
 	GlobalLight.SetAmbient(d);
 
 
@@ -47,16 +53,27 @@ void Game_Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 
 void Game_Finalize()
 {
+	PlayerFinalize();
 	Field_Finalize();
 	Camera_Finalize();
-	UnloadAudio(g_BgmID);//ƒTƒEƒ“ƒh‚Ì‰ğ•ú
+	//UnloadAudio(g_BgmID);//ï¿½Tï¿½Eï¿½ï¿½ï¿½hï¿½Ì‰ï¿½ï¿½
 }
 
 void Game_Update()
 {
-	//XVˆ—
-	Camera_Update();					//ˆê”Ôã
+   if (IsControllerButtonDownTrigger(XINPUT_GAMEPAD_BACK) ||
+		Keyboard_IsKeyDownTrigger(KK_SPACE))
+	{
+		XMFLOAT4 color(0.0f, 0.0f, 0.0f, 1.0f);
+		SetFade(40.0f, color, FADE_OUT, SCENE_RESULT);
+		return;
+	}
+	//ï¿½Xï¿½Vï¿½ï¿½ï¿½ï¿½
+	Camera_Update();					//ï¿½ï¿½Ôï¿½
+	GamepadUpdate();
+
 	Field_Update();
+	PlayerUpdate();
 
 }
 
@@ -65,14 +82,16 @@ void Game_Draw()
 	{//2d
 		GlobalLight.SetEnable(false);
 		Shader_SetLight(GlobalLight.Light);
-		SetDepthTest(false);//[“xƒeƒXƒg–³Œø	
+		SetDepthTest(false);//ï¿½[ï¿½xï¿½eï¿½Xï¿½gï¿½ï¿½ï¿½ï¿½
+		PlayerDraw();
 	}
 	{//3d
-		SetDepthTest(true);//[“xƒeƒXƒg—LŒø
+		SetDepthTest(true);//ï¿½[ï¿½xï¿½eï¿½Xï¿½gï¿½Lï¿½ï¿½
 		GlobalLight.SetEnable(true);
 		Shader_SetLight(GlobalLight.Light);
-		Camera_Draw();						//Field‚Ì‚·‚®ã
+		Camera_Draw();						//Fieldï¿½Ì‚ï¿½ï¿½ï¿½ï¿½ï¿½
 		Field_Draw();
+
 		GlobalLight.SetEnable(false);
 		Shader_SetLight(GlobalLight.Light);
 	}

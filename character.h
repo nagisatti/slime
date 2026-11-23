@@ -3,6 +3,7 @@
 *    全キャラクタクラスの継承元
 *
 *    作成者 大塚  変更日 2026/11/16
+*    変更者 三代川  変更日 2026/11/21
 *
 *
 //======================================================================================*/
@@ -27,17 +28,20 @@ class Character
 {
 private:
 	// 座標
-	XMFLOAT2 pos;
-	float hp;
+	XMFLOAT2 m_pos;
+	float m_hp;
 
 public:
 	Character(XMFLOAT2 initialPos, float initialHp)
-		: pos(initialPos), hp(initialHp)
+		: m_pos(initialPos), m_hp(initialHp)
 	{
 	}
 
-	XMFLOAT2 GetPos() const { return pos; }
-	float GetHp() const { return hp; }
+	XMFLOAT2 GetPos() const { return m_pos; }
+	float GetHp() const { return m_hp; }
+
+	void SetPos(const XMFLOAT2& pos) { m_pos = pos; }
+	void SetHp(const float hp) { m_hp = hp; }
 
 };
 
