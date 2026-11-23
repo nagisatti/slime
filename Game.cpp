@@ -1,6 +1,4 @@
-
-//Game.cpp
-
+// Game.cpp  2Dゲーム用
 #include "Manager.h"
 #include "direct3d.h"
 #include "shader.h"
@@ -8,92 +6,67 @@
 #include "Game.h"
 #include "keyboard.h"
 #include "Audio.h"
-#include "camera.h"
+#include "camera2d.h"      // camera.h の代わり
 #include "controller.h"
-
-#include "field.h"
 #include <Xinput.h>
 #include "fade.h"
-
 #include "player.h"
 
-static	int		g_BgmID = NULL;	//サウンド管理ID
-static LIGHTOBJECT GlobalLight;
+static LIGHTOBJECT GlobalLight;  // 「ライトOFF」を送るためだけに残す
+static ID3D11ShaderResourceView* g_WhiteTex = nullptr;
+
 
 void Game_Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 {
-
-	Camera_Initialize();
-	Field_Initialize(pDevice, pContext);//3Dテスト初期化
+	Camera2D_Initialize();   // 2Dカメラの初期化
 	PlayerInitialize();
 
+	TexMetadata metadata;
+	ScratchImage image;
+	LoadFromWICFile(L"asset\\texture\\fade.bmp", WIC_FLAGS_NONE, &metadata, image);
+	CreateShaderResourceView(pDevice, image.GetImages(), image.GetImageCount(), metadata, &g_WhiteTex);
 
-	// g_BgmID = LoadAudio("asset\\Audio\\bgm.wav");	//サウンドロード
-	//PlayAudio(g_BgmID, true);	//再生開始（ループあり）
-	//PlayAudio(g_BgmID);			//再生開始（ループなし）
-	//PlayAudio(g_BgmID, false);	//再生開始（ループなし）
-
-	GlobalLight.SetEnable(true);	//ライトON
-
-	XMVECTOR dir = XMVectorSet(0.5f, -1.0f, 0.5f, 0.0f);//光の方向
-	dir = XMVector3Normalize(XMVector3Normalize(dir));
-	XMFLOAT4 d;
-	XMStoreFloat4(&d, dir);
-	GlobalLight.SetDirection(d);			//光の方向設定
-
-	d = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);	//ライト色設定
-	GlobalLight.SetDiffuse(d);
-
-	d = XMFLOAT4(0.65f, 0.65f, 0.95f, 1.0f);	//ライトアンビエント色設定
-	GlobalLight.SetAmbient(d);
-
-
-
+	GlobalLight.SetEnable(false);  // 2Dなのでライトは使わない
 }
 
 void Game_Finalize()
 {
+	SAFE_RELEASE(g_WhiteTex);
 	PlayerFinalize();
-	Field_Finalize();
-	Camera_Finalize();
-	// UnloadAudio(g_BgmID);//サウンドの解放
+	Camera2D_Finalize();
 }
 
 void Game_Update()
 {
-   if (IsControllerButtonDownTrigger(XINPUT_GAMEPAD_BACK) ||
+	if (IsControllerButtonDownTrigger(XINPUT_GAMEPAD_BACK) ||
 		Keyboard_IsKeyDownTrigger(KK_SPACE))
 	{
 		XMFLOAT4 color(0.0f, 0.0f, 0.0f, 1.0f);
 		SetFade(40.0f, color, FADE_OUT, SCENE_RESULT);
 		return;
 	}
-	//更新処理
-	Camera_Update();					//一番上
-	GamepadUpdate();
 
-	Field_Update();
+	GamepadUpdate();
 	PlayerUpdate();
 
+	// プレイヤーを追いかけるカメラ(プレイヤーの更新が終わった「後」に呼ぶ)
+	SetCamera2DPosition(PlayerGetPos());
+	Camera2D_Update();   // O/Pキーでズーム確認ができる
 }
 
 void Game_Draw()
 {
-	{//2d
-		GlobalLight.SetEnable(false);
-		Shader_SetLight(GlobalLight.Light);
-		SetDepthTest(false);//深度テスト無効
-		PlayerDraw();
-	}
-	{//3d
-		SetDepthTest(true);//深度テスト有効
-		GlobalLight.SetEnable(true);
-		Shader_SetLight(GlobalLight.Light);
-		Camera_Draw();						//Fieldのすぐ上
-		Field_Draw();
+	SetDepthTest(false);   // 2Dなので深度テストは使わない(描画順で重なりが決まる)
 
-		GlobalLight.SetEnable(false);
-		Shader_SetLight(GlobalLight.Light);
-	}
+	GlobalLight.SetEnable(false);
+	Shader_SetLight(GlobalLight.Light);  // ライトOFFをシェーダーへ送る
+
+	Camera2D_Draw();       // カメラ位置とズームから行列を作る
+	Camera2D_Apply();      // 行列をシェーダーへ送る
+	Shader_Begin();        // シェーダーを有効にする
+
+	Direct3D_GetDeviceContext()->PSSetShaderResources(0, 1, &g_WhiteTex);
+	SetBlendState(BLENDSTATE_ALFA);
+
+	PlayerDraw();          // 先に描いたものが奥、後に描いたものが手前になる
 }
-
