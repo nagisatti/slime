@@ -105,6 +105,15 @@
     <ClCompile Include="map.cpp">
       <Filter>Game\Map</Filter>
     </ClCompile>
+    <ClCompile Include="controller.cpp">
+      <Filter>common\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="collision.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="enemy.cpp">
+      <Filter>Game\Enemy</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h">
@@ -163,6 +172,15 @@
     </ClInclude>
     <ClInclude Include="map.h">
       <Filter>Game\Map</Filter>
+    </ClCompile>
+    <ClInclude Include="controller.h">
+      <Filter>common\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="collision.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="enemy.h">
+      <Filter>Game\Enemy</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
