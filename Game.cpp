@@ -1,4 +1,4 @@
-// Game.cpp  2DƒQ[ƒ€—p
+// Game.cpp  2Dï¿½Qï¿½[ï¿½ï¿½ï¿½p
 #include "Manager.h"
 #include "direct3d.h"
 #include "shader.h"
@@ -6,19 +6,19 @@
 #include "Game.h"
 #include "keyboard.h"
 #include "Audio.h"
-#include "camera2d.h"      // camera.h ‚Ì‘ã‚í‚è
+#include "camera2d.h"      // camera.h ï¿½Ì‘ï¿½ï¿½ï¿½
 #include "controller.h"
 #include <Xinput.h>
 #include "fade.h"
 #include "player.h"
 
-static LIGHTOBJECT GlobalLight;  // uƒ‰ƒCƒgOFFv‚ğ‘—‚é‚½‚ß‚¾‚¯‚Éc‚·
+static LIGHTOBJECT GlobalLight;  // ï¿½uï¿½ï¿½ï¿½Cï¿½gOFFï¿½vï¿½ğ‘—‚é‚½ï¿½ß‚ï¿½ï¿½ï¿½ï¿½Écï¿½ï¿½
 static ID3D11ShaderResourceView* g_WhiteTex = nullptr;
 
 
 void Game_Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 {
-	Camera2D_Initialize();   // 2DƒJƒƒ‰‚Ì‰Šú‰»
+	Camera2D_Initialize();   // 2Dï¿½Jï¿½ï¿½ï¿½ï¿½ï¿½Ìï¿½ï¿½ï¿½ï¿½ï¿½
 	PlayerInitialize();
 
 	TexMetadata metadata;
@@ -26,7 +26,7 @@ void Game_Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 	LoadFromWICFile(L"asset\\texture\\fade.bmp", WIC_FLAGS_NONE, &metadata, image);
 	CreateShaderResourceView(pDevice, image.GetImages(), image.GetImageCount(), metadata, &g_WhiteTex);
 
-	GlobalLight.SetEnable(false);  // 2D‚È‚Ì‚Åƒ‰ƒCƒg‚Íg‚í‚È‚¢
+	GlobalLight.SetEnable(false);  // 2Dï¿½È‚Ì‚Åƒï¿½ï¿½Cï¿½gï¿½Ígï¿½ï¿½È‚ï¿½
 }
 
 void Game_Finalize()
@@ -49,24 +49,24 @@ void Game_Update()
 	GamepadUpdate();
 	PlayerUpdate();
 
-	// ƒvƒŒƒCƒ„[‚ğ’Ç‚¢‚©‚¯‚éƒJƒƒ‰(ƒvƒŒƒCƒ„[‚ÌXV‚ªI‚í‚Á‚½uŒãv‚ÉŒÄ‚Ô)
+	// ï¿½vï¿½ï¿½ï¿½Cï¿½ï¿½ï¿½[ï¿½ï¿½Ç‚ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Jï¿½ï¿½ï¿½ï¿½(ï¿½vï¿½ï¿½ï¿½Cï¿½ï¿½ï¿½[ï¿½ÌXï¿½Vï¿½ï¿½ï¿½Iï¿½ï¿½ï¿½ï¿½ï¿½ï¿½uï¿½ï¿½vï¿½ÉŒÄ‚ï¿½)
 	SetCamera2DPosition(PlayerGetPos());
-	Camera2D_Update();   // O/PƒL[‚ÅƒY[ƒ€Šm”F‚ª‚Å‚«‚é
+	Camera2D_Update();   // O/Pï¿½Lï¿½[ï¿½ÅƒYï¿½[ï¿½ï¿½ï¿½mï¿½Fï¿½ï¿½ï¿½Å‚ï¿½ï¿½ï¿½
 }
 
 void Game_Draw()
 {
-	SetDepthTest(false);   // 2D‚È‚Ì‚Å[“xƒeƒXƒg‚Íg‚í‚È‚¢(•`‰æ‡‚Åd‚È‚è‚ªŒˆ‚Ü‚é)
+	SetDepthTest(false);   // 2Dï¿½È‚Ì‚Å[ï¿½xï¿½eï¿½Xï¿½gï¿½Ígï¿½ï¿½È‚ï¿½(ï¿½`ï¿½æ‡ï¿½Ådï¿½È‚è‚ªï¿½ï¿½ï¿½Ü‚ï¿½)
 
 	GlobalLight.SetEnable(false);
-	Shader_SetLight(GlobalLight.Light);  // ƒ‰ƒCƒgOFF‚ğƒVƒF[ƒ_[‚Ö‘—‚é
+	Shader_SetLight(GlobalLight.Light);  // ï¿½ï¿½ï¿½Cï¿½gOFFï¿½ï¿½ï¿½Vï¿½Fï¿½[ï¿½_ï¿½[ï¿½Ö‘ï¿½ï¿½ï¿½
 
-	Camera2D_Draw();       // ƒJƒƒ‰ˆÊ’u‚ÆƒY[ƒ€‚©‚çs—ñ‚ğì‚é
-	Camera2D_Apply();      // s—ñ‚ğƒVƒF[ƒ_[‚Ö‘—‚é
-	Shader_Begin();        // ƒVƒF[ƒ_[‚ğ—LŒø‚É‚·‚é
+	Camera2D_Draw();       // ï¿½Jï¿½ï¿½ï¿½ï¿½ï¿½Ê’uï¿½ÆƒYï¿½[ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½sï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+	Camera2D_Apply();      // ï¿½sï¿½ï¿½ï¿½ï¿½Vï¿½Fï¿½[ï¿½_ï¿½[ï¿½Ö‘ï¿½ï¿½ï¿½
+	Shader_Begin();        // ï¿½Vï¿½Fï¿½[ï¿½_ï¿½[ï¿½ï¿½Lï¿½ï¿½ï¿½É‚ï¿½ï¿½ï¿½
 
 	Direct3D_GetDeviceContext()->PSSetShaderResources(0, 1, &g_WhiteTex);
 	SetBlendState(BLENDSTATE_ALFA);
 
-	PlayerDraw();          // æ‚É•`‚¢‚½‚à‚Ì‚ª‰œAŒã‚É•`‚¢‚½‚à‚Ì‚ªè‘O‚É‚È‚é
+	PlayerDraw();          // ï¿½ï¿½É•`ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì‚ï¿½ï¿½ï¿½ï¿½Aï¿½ï¿½É•`ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ì‚ï¿½ï¿½ï¿½Oï¿½É‚È‚ï¿½
 }

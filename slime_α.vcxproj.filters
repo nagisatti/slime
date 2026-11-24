@@ -111,6 +111,9 @@
     <ClCompile Include="camera2d.cpp">
       <Filter>common\Graphics</Filter>
     </ClCompile>
+    <ClCompile Include="enemy.cpp">
+      <Filter>Game\Enemy</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h">
@@ -175,6 +178,9 @@
     </ClInclude>
     <ClInclude Include="camera2d.h">
       <Filter>common\Graphics</Filter>
+    </ClCompile>
+    <ClInclude Include="enemy.h">
+      <Filter>Game\Enemy</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
