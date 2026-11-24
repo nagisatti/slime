@@ -172,7 +172,7 @@
     </ClInclude>
     <ClInclude Include="map.h">
       <Filter>Game\Map</Filter>
-    </ClCompile>
+    </ClInclude>
     <ClInclude Include="controller.h">
       <Filter>common\Input</Filter>
     </ClInclude>
