@@ -16,6 +16,7 @@
 #include "fade.h"
 
 #include "player.h"
+#include "map.h"
 
 static	int		g_BgmID = NULL;	//�T�E���h�Ǘ�ID
 static LIGHTOBJECT GlobalLight;
