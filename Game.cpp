@@ -16,6 +16,7 @@
 #include "fade.h"
 
 #include "player.h"
+#include "enemy.h"
 
 static	int		g_BgmID = NULL;	//�T�E���h�Ǘ�ID
 static LIGHTOBJECT GlobalLight;
@@ -26,7 +27,10 @@ void Game_Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 	Camera_Initialize();
 	Field_Initialize(pDevice, pContext);//3D�e�X�g������
 	PlayerInitialize();
+	EnemyInitialize();
 
+
+	CreateEnemy(XMFLOAT2{ 1.0f, 1.0f }, DOG);//お試しで追加
 
 	//g_BgmID = LoadAudio("asset\\Audio\\bgm.wav");	//�T�E���h���[�h
 	//PlayAudio(g_BgmID, true);	//�Đ��J�n�i���[�v����j
@@ -53,6 +57,7 @@ void Game_Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 
 void Game_Finalize()
 {
+	EnemyFinalize();
 	PlayerFinalize();
 	Field_Finalize();
 	Camera_Finalize();
@@ -74,7 +79,7 @@ void Game_Update()
 
 	Field_Update();
 	PlayerUpdate();
-
+	EnemyUpdate();
 }
 
 void Game_Draw()
@@ -84,6 +89,7 @@ void Game_Draw()
 		Shader_SetLight(GlobalLight.Light);
 		SetDepthTest(false);//�[�x�e�X�g����
 		PlayerDraw();
+		EnemyDraw();
 	}
 	{//3d
 		SetDepthTest(true);//�[�x�e�X�g�L��
