@@ -49,7 +49,7 @@ static constexpr float ENEMY_DOG_JUMP_SPEED{ 1.73f };// ENEMY_Œ¢	ƒWƒƒƒ“ƒv‚Ì‰‘¬“
 static constexpr float ENEMY_DOG_GRAVITY{ 0.5f };
 
 //--------------------ŒvZ‚·‚é’è”--------------------
-static constexpr float FRAME_TIME{ 1.0f / 60.0f };
+static constexpr float ENEMY_FRAME_TIME{ 1.0f / 60.0f };
 
 
 
