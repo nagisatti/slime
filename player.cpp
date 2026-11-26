@@ -2,7 +2,7 @@
 *  ・player.cpp
 *    プレイヤーの動きや状態を書いてる
 *
-*    作成者 大塚  変更日 2026/11/16
+*    作成者 大塚  変更日 2026/11/25
 *    更新者 三代川  変更日 2026/11/22
 *
 *
@@ -50,6 +50,7 @@ namespace
 {
 	//optional：値が存在するかもしれないし、しないかもしれない（ぬるぽかどうか判断する）
 	std::optional<Player> g_player;
+
 }
 
 //*****************************************************************************
@@ -60,6 +61,7 @@ static void PlayerIdle(Player& player);
 static void PlayerMove(Player& player);
 static void PlayerJump(Player& player);
 static void PlayerDash(Player& player);
+static void PlayerWaterMove(Player& player);
 //--------------------状態を切り替える--------------------
 static void StartJump(Player& player);
 static void StartDash(Player& player);
@@ -67,6 +69,8 @@ static void StartDash(Player& player);
 static float GetInputX();
 static bool IsJumpPressed();
 static bool IsDashPressed();
+//--------------------水分ゲージ--------------------
+static void UpdateWaterGauge(Player& player);
 //--------------------その他の関数--------------------
 static void ApplyMoveInput(Player& player);
 static bool CheckJumpAndDash(Player& player);
@@ -83,6 +87,9 @@ void PlayerInitialize()
 	//emplace：凄い便利になった「new」みたいな感じ
 	g_player.emplace(XMFLOAT2{ 0.0f, 2.0f }, 10.0f);
 	
+	// 水分量の初期化
+	g_player->SetWater(100.0f);
+
 }
 
 //*****************************************************************************
@@ -128,6 +135,10 @@ void PlayerUpdate()
 	case Player::DASH:
 		PlayerDash(player);
 		break;
+
+	case Player::WATERMOVE:
+		UpdateWaterGauge(player);
+		break;
 	}
 
 	//重力
@@ -142,12 +153,27 @@ void PlayerUpdate()
 //*****************************************************************************
 void PlayerDraw()
 {
-	if (!g_player)
-	{
-		return;
-	}
+	// ガード処理
+	if (!g_player) return;
 
 	const Player& player = *g_player;
+
+	// 現在の水分量の割合
+	const float waterRatio = player.GetWater() / player.GetMaxWater();
+
+	const XMFLOAT2 gaugePos{ 100.0f, 50.0f };
+	const XMFLOAT2 gaugeSize{ 200.0f, 20.0f };
+
+	DrawSprite(gaugePos, gaugeSize,	XMFLOAT4{ 0.2f, 0.2f, 0.2f, 1.0f });
+
+	if (waterRatio > 0.0f)
+	{
+		const float width = gaugeSize.x * waterRatio;
+		const XMFLOAT2 fillPos{	gaugePos.x - (gaugeSize.x - width) * 0.5f, gaugePos.y};
+
+		DrawSprite(fillPos, XMFLOAT2{ width, gaugeSize.y },	XMFLOAT4{ 0.0f, 0.7f, 1.0f, 1.0f });
+	}
+
 
 	//仮の地面・壁
 	for (const TestBlock& block : TEST_BLOCKS)
@@ -273,6 +299,14 @@ static void StartJump(Player& player)
 	player.SetVelocity(velocity);
 	player.SetIsGround(false);
 	player.SetState(Player::JUMP);
+}
+
+//*****************************************************************************
+// 特殊移動の関数
+//*****************************************************************************
+static void PlayerWaterMove(Player& player)
+{
+
 }
 
 //*****************************************************************************
@@ -494,4 +528,17 @@ static bool HitTestField(const XMFLOAT2& pos, const XMFLOAT2& size, XMFLOAT2& hi
 		}
 	}
 	return false;
+}
+
+//*****************************************************************************
+// 水分ゲージの状態管理関数
+//*****************************************************************************
+static void UpdateWaterGauge(Player& player)
+{
+	// 特殊移動中だけ消費する
+	if (player.GetState() == Player::WATERMOVE)
+	{
+		// 1秒に0.5消費
+		player.SetWater(player.GetWater() - player.GetDecayWater() * FRAME_TIME);
+	}
 }
