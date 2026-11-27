@@ -47,6 +47,7 @@ public:
 	XMFLOAT2 size;  // 
 	TILESET no;     // Ží—Þ
 	bool use;
+	XMFLOAT4 col;
 
 };
 
@@ -58,7 +59,9 @@ void MapFinalize();
 void MapUpdate();
 void MapDraw();
 
-void SetTile(float x, float y, float w, float h, int txt);
+void SetTile(float x, float y, float w, float h, TILESET txt);
 
+
+TILE* GetTile(void);
 
 #endif // !MAP_H#pragma once

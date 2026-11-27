@@ -14,6 +14,7 @@
 #include <DirectXMath.h>
 #include "direct3d.h"
 #include "map.h"
+
 #include "sprite.h"
 
 
@@ -23,9 +24,8 @@
 //*****************************************************************************
 static	ID3D11Device* g_pDevice = NULL;
 static	ID3D11DeviceContext* g_pContext = NULL;
+static	ID3D11ShaderResourceView* g_Texture;
 
-static ID3D11ShaderResourceView* g_Texture;
-static const WCHAR* TextureName = { L"Asset\\Texture\\tairuv1.jpg" };
 
 float u = 0.0f;
 float v = 0.0f;
@@ -35,13 +35,15 @@ int MapChip[MAP_Y][MAP_X] = {
 	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 	{1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0},
 	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	{1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0},
 	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0},
 	{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1},
 	{1, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1},
+	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 	{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 };
 
@@ -52,22 +54,26 @@ int MapChip[MAP_Y][MAP_X] = {
 //*****************************************************************************
 void MapInitialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 {
+
+	// テクスチャ読み込み
+	TexMetadata metadata;
+	ScratchImage image;
+	LoadFromWICFile(L"Asset\\Texture\\tairuv1.jpg", WIC_FLAGS_NONE, &metadata, image);
+	CreateShaderResourceView(pDevice, image.GetImages(),
+		image.GetImageCount(), metadata, &g_Texture);
+	assert(g_Texture);
+
 	for (int i = 0; i < TILE_TOTAL; i++)
 	{
 		Tile[i].pos = XMFLOAT2(0.0f, 0.0f);		// 座標
 		Tile[i].size = XMFLOAT2(0.0f, 0.0f);	// サイズ
 		Tile[i].use = false;					// 使用フラグ
+		Tile[i].no = AIR;							 // 種類
+		Tile[i].col = XMFLOAT4(1.0f, 1.0f,1.0f,1.0f);							 //
 
 	}
 
 
-	// テクスチャ読み込み
-	TexMetadata metadata;
-	ScratchImage image;
-	LoadFromWICFile(TextureName, WIC_FLAGS_NONE, &metadata, image);
-	CreateShaderResourceView(pDevice, image.GetImages(),
-		image.GetImageCount(), metadata, &g_Texture);
-	assert(g_Texture);
 
 
 
@@ -84,23 +90,18 @@ void MapInitialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 					switch (MapChip[y][x])
 					{
 					case GRASS:
-						u = 0.0f;
-						v = 0.0f;
+						Tile[MapChip[y][x]].no = GRASS;
 						break;
 					case DIRT:
-						u = 0.25f;
-						v = 0.0f;
+						Tile[MapChip[y][x]].no = DIRT;
 						break;
-				
-
 					}
-				SetTile(
-					x * TILE_SIZE,
-					y * TILE_SIZE,
-					TILE_SIZE,
-					TILE_SIZE,
-					MapChip[y][x]);
-
+					SetTile(
+						x * TILE_SIZE,
+						y * TILE_SIZE,
+						TILE_SIZE,
+						TILE_SIZE,
+						(TILESET)MapChip[y][x]);
 				}
 
 
@@ -139,16 +140,20 @@ void MapDraw()
 	for (int i = 0; i < TILE_TOTAL; i++)
 	{
 		if (Tile[i].use)
-		DrawSpriteTxt(Tile[i].pos,
-			Tile[i].size,
-			u, v, TEXTURE_SIZE);
+		{
+			DrawSprite(
+				Tile[i].size,
+				Tile[i].col,
+				Tile[i].no, 4, 4);
+
+		}
 
 	}
 
 }
 
 
-void SetTile(float x, float y, float w, float h, int txt)
+void SetTile(float x, float y, float w, float h, TILESET txt)
 {
 
 	for (int i = 0; i < TILE_TOTAL; i++)
@@ -158,8 +163,14 @@ void SetTile(float x, float y, float w, float h, int txt)
 			Tile[i].pos = XMFLOAT2(x, y);				// 座標
 			Tile[i].size = XMFLOAT2(w, h);				// サイズ
 			Tile[i].use = true;							// 使用フラグ
+			Tile[i].no = txt;							
+
 			break;
 		}
 	}
 }
 
+TILE* GetTile(void)
+{
+	return Tile;
+}

@@ -26,6 +26,8 @@ void Game_Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 
 	Camera_Initialize();
 	Field_Initialize(pDevice, pContext);//3D�e�X�g������
+	MapInitialize(pDevice, pContext);
+
 	PlayerInitialize();
 
 
@@ -56,6 +58,7 @@ void Game_Finalize()
 {
 	PlayerFinalize();
 	Field_Finalize();
+	MapFinalize();
 	Camera_Finalize();
 	//UnloadAudio(g_BgmID);//�T�E���h�̉��
 }
@@ -72,7 +75,7 @@ void Game_Update()
 	//�X�V����
 	Camera_Update();					//��ԏ�
 	GamepadUpdate();
-
+	MapUpdate();
 	Field_Update();
 	PlayerUpdate();
 
@@ -84,6 +87,7 @@ void Game_Draw()
 		GlobalLight.SetEnable(false);
 		Shader_SetLight(GlobalLight.Light);
 		SetDepthTest(false);//�[�x�e�X�g����
+		MapDraw();
 		PlayerDraw();
 	}
 	{//3d
