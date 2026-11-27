@@ -272,19 +272,19 @@ void DrawSprite(XMFLOAT2 size, XMFLOAT4 col, int bno, int wc, int hc)
 	float y = (bno / wc) * h;
 
 	// 指定の位置に指定のサイズ、色の四角形を描画する /////////テクスチャ追加
-	v[0].position = { -(size.x / 2), -(size.y / 2), 0.0f };
+	v[0].position = { -(size.x / 2), (size.y / 2), 0.0f };
 	v[0].color = col;
 	v[0].texCoord = { x, y };
 
-	v[1].position = { (size.x / 2), -(size.y / 2), 0.0f };
+	v[1].position = { (size.x / 2), (size.y / 2), 0.0f };
 	v[1].color = col;
 	v[1].texCoord = { x + w, y };
 
-	v[2].position = { -(size.x / 2), (size.y / 2), 0.0f };
+	v[2].position = { -(size.x / 2), -(size.y / 2), 0.0f };
 	v[2].color = col;
 	v[2].texCoord = { x, y + h };
 
-	v[3].position = { (size.x / 2), (size.y / 2), 0.0f };
+	v[3].position = { (size.x / 2), -(size.y / 2), 0.0f };
 	v[3].color = col;
 	v[3].texCoord = { x + w, y + h };
 
