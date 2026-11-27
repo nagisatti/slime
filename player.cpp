@@ -612,6 +612,7 @@ static bool HitTestField(const XMFLOAT2& pos, const XMFLOAT2& size, XMFLOAT2& hi
 const XMFLOAT2& PlayerGetPos()
 {
 	return g_player->GetPos();
+}
 // 特殊移動開始用の関数
 //*****************************************************************************
 static void StartStretch(Player& player)
