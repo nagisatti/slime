@@ -3,7 +3,7 @@
 *    プレイヤーの動きや状態を書いてる
 *
 *    作成者 大塚  変更日 2026/11/26
-*    更新者 三代川  変更日 2026/11/22
+*    更新者 三代川  変更日 2026/11/27
 *
 *
 //======================================================================================*/
@@ -17,6 +17,7 @@
 #include "controller.h"
 #include "keyboard.h"
 #include "collision.h"
+#include "enemy.h"
 
 //確認用
 #include "shader.h"
@@ -77,6 +78,7 @@ static bool CheckJumpAndDash(Player& player);
 static void ApplyGravity(Player& player);
 static void MoveAndCollide(Player& player);
 static bool HitTestField(const XMFLOAT2& pos, const XMFLOAT2& size, XMFLOAT2& hitPos, XMFLOAT2& hitSize);
+static bool HitEnemy(const XMFLOAT2& pos, const XMFLOAT2& size, XMFLOAT2& hitPos, XMFLOAT2& hitSize);
 static void ConsumeWater(Player& player, float stretchDistance);
 static void StartStretch(Player& player);
 static void UpdateStretchTip(Player& player, const XMFLOAT2& direction);
@@ -607,12 +609,22 @@ static bool HitTestField(const XMFLOAT2& pos, const XMFLOAT2& size, XMFLOAT2& hi
 }
 
 //*****************************************************************************
+// 敵と当たっているか調べる
+//*****************************************************************************
+static bool HitEnemy(const XMFLOAT2& pos, const XMFLOAT2& size, XMFLOAT2& hitPos, XMFLOAT2& hitSize)
+{
+	//GetEnemyでエネミーの先頭アドレスを受け取ってプレイヤーとの当たり判定を取る
+}
+
+//*****************************************************************************
 // プレイヤーの座標を取得
 //*****************************************************************************
 const XMFLOAT2& PlayerGetPos()
 {
 	return g_player->GetPos();
 }
+
+//*****************************************************************************
 // 特殊移動開始用の関数
 //*****************************************************************************
 static void StartStretch(Player& player)
@@ -631,4 +643,19 @@ static void UpdateStretchTip(Player& player, const XMFLOAT2& direction)
 	const float length = player.GetCurLength();
 
 	player.SetStretchTip(XMFLOAT2{ start.x + direction.x * length,start.y + direction.y * length });
+}
+
+//*****************************************************************************
+// プレイヤー情報の取得
+//*****************************************************************************
+Player* GetPlayer()
+{
+	//g_playerにPlayerが入っているか確認する
+	if (g_player.has_value())
+	{
+		//*g_playerで中身のPlayerを取り出して、&でそのアドレス（Player*）にする
+		return &(*g_player);
+	}
+	//まだemplaceされていない（空っぽ）ならnullptrを返す
+	return nullptr;
 }
