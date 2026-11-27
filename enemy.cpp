@@ -85,9 +85,12 @@ void EnemyUpdate()
 //=====１体ごとに使用しているか確認後更新=====
 void Enemy::Update()
 {
+	XMFLOAT2 enemyPosition = GetPos();
+	XMFLOAT2 enemyScale = GetScale();
+
 	// 移動
-	// 攻撃
 	// 当たり判定
+	
 }
 
 //*****************************************************************************
@@ -154,3 +157,29 @@ void DeleteEnemy(int index)
 	}
 }
 // 使うときは　DeleteEnemy(i);　等
+
+Enemy* GetEnemy(int index)
+{
+	if (index < 0 || index >= ENEMY_MAX)
+	{
+		return nullptr;
+	}
+
+	return g_enemy[index];
+}
+/*
+
+for (int i = 0; i < ENEMY_MAX; i++)
+	{
+	Enemy* enemy = GetEnemy(0);
+
+	if (enemy != nullptr)
+	{
+		XMFLOAT2 enemyPos = enemy->GetPos();
+
+		// enemyPos.x
+		// enemyPos.y
+	}
+}		//って感じで使う
+
+*/

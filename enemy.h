@@ -113,5 +113,8 @@ Enemy* CreateEnemy(XMFLOAT2 position, ENEMY_TYPE type);
 // エネミーが倒されたとき
 void DeleteEnemy(int index);
 
+// Get エネミーの情報
+Enemy* GetEnemy(int index);
+
 
 #endif // ENEMY_H
