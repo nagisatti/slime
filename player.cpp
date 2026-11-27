@@ -17,6 +17,7 @@
 #include "controller.h"
 #include "keyboard.h"
 #include "collision.h"
+#include "camera2d.h"
 #include "enemy.h"
 
 //確認用
@@ -32,6 +33,9 @@ static constexpr float COLLISION_MARGIN{ 0.01f };//横の当たり判定の時�
 static constexpr XMFLOAT4 COLOR_PLAYER{ 1.0f, 1.0f, 1.0f, 1.0f };
 static constexpr XMFLOAT4 COLOR_BLOCK{ 0.5f, 0.5f, 0.5f, 1.0f };
 static constexpr float MIN_WATER_GAGE{ 20.0f }; // 特殊移動時に必要な最低限の水分量
+static constexpr float WATER_GAUGE_WIDTH{ 420.0f };
+static constexpr float WATER_GAUGE_HEIGHT{ 28.0f };
+static constexpr float WATER_GAUGE_BOTTOM{ 36.0f };
 
 struct TestBlock
 {
@@ -82,6 +86,8 @@ static bool HitEnemy(const XMFLOAT2& pos, const XMFLOAT2& size, XMFLOAT2& hitPos
 static void ConsumeWater(Player& player, float stretchDistance);
 static void StartStretch(Player& player);
 static void UpdateStretchTip(Player& player, const XMFLOAT2& direction);
+static void DrawWaterGauge(const Player& player);
+static void DrawScreenRect(float x, float y, float width, float height, const XMFLOAT4& color);
 
 
 //*****************************************************************************
@@ -177,6 +183,49 @@ void PlayerDraw()
 	{
 		DrawSprite(	player.GetStretchTip(), XMFLOAT2{ 10.0f, 10.0f }, XMFLOAT4{ 1.0f, 0.0f, 0.0f, 1.0f });
 	}
+
+	DrawWaterGauge(player);
+}
+
+//*****************************************************************************
+// 水分ゲージの描画
+//*****************************************************************************
+static void DrawWaterGauge(const Player& player)
+{
+	const float maxWater = player.GetMaxWater();
+	const float waterRate = maxWater > 0.0f
+		? (std::clamp)(player.GetWater() / maxWater, 0.0f, 1.0f)
+		: 0.0f;
+
+    const float screenWidth = static_cast<float>(Direct3D_GetBackBufferWidth());
+	const float screenHeight = static_cast<float>(Direct3D_GetBackBufferHeight());
+	const float gaugeX = screenWidth * 0.5f;
+	const float gaugeY = screenHeight - WATER_GAUGE_BOTTOM - WATER_GAUGE_HEIGHT * 0.5f;
+
+	// 画面座標からワールド座標へ変換するため、カメラの移動・ズームに追従しない。
+	DrawScreenRect(gaugeX, gaugeY, WATER_GAUGE_WIDTH + 8.0f, WATER_GAUGE_HEIGHT + 8.0f,
+		XMFLOAT4{ 0.05f, 0.05f, 0.08f, 1.0f });
+	DrawScreenRect(gaugeX, gaugeY, WATER_GAUGE_WIDTH, WATER_GAUGE_HEIGHT,
+		XMFLOAT4{ 0.15f, 0.18f, 0.22f, 1.0f });
+
+	if (waterRate > 0.0f)
+	{
+		const float waterWidth = WATER_GAUGE_WIDTH * waterRate;
+		const float waterLeft = gaugeX - WATER_GAUGE_WIDTH * 0.5f;
+		DrawScreenRect(waterLeft + waterWidth * 0.5f, gaugeY, waterWidth, WATER_GAUGE_HEIGHT - 6.0f,
+			XMFLOAT4{ 0.1f, 0.65f, 1.0f, 1.0f });
+	}
+}
+
+static void DrawScreenRect(float x, float y, float width, float height, const XMFLOAT4& color)
+{
+	const XMFLOAT2 worldPos = Camera2D_ScreenToWorld(XMFLOAT2{ x, y });
+	const XMFLOAT2 worldRight = Camera2D_ScreenToWorld(XMFLOAT2{ x + width, y });
+	const XMFLOAT2 worldBottom = Camera2D_ScreenToWorld(XMFLOAT2{ x, y + height });
+
+	DrawSprite(worldPos,
+		XMFLOAT2{ std::abs(worldRight.x - worldPos.x), std::abs(worldBottom.y - worldPos.y) },
+		color);
 }
 
 //*****************************************************************************
