@@ -104,4 +104,5 @@ void Game_Draw()
 	SetBlendState(BLENDSTATE_ALFA);
 
 	PlayerDraw();          // ��ɕ`�������̂����A��ɕ`�������̂���O�ɂȂ�
+	EnemyDraw();
 }
