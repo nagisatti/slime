@@ -43,9 +43,11 @@ enum TILESET
 class TILE
 {
 public:
-	XMFLOAT2 pos;  // 表示座標
+	XMFLOAT2 pos;	// 表示座標
 	XMFLOAT2 size;  // 
-	TILESET no;      // 種類
+	TILESET no;     // 種類
+	bool use;
+	XMFLOAT4 col;
 
 };
 
@@ -57,7 +59,9 @@ void MapFinalize();
 void MapUpdate();
 void MapDraw();
 
-void SetTile(float x, float y, float w, float h, float u, float v);
+void SetTile(float x, float y, float w, float h, TILESET txt);
 
+
+TILE* GetTile(void);
 
 #endif // !MAP_H#pragma once

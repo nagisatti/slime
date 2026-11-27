@@ -68,7 +68,7 @@ private:
 	ENEMY_TYPE m_type = DOG;
 
 	XMFLOAT2 m_velocity{ 0.0f, 0.0f };// 速度
-	XMFLOAT2 m_scale{ 50.0f, 50.0f };// 大きさ
+	XMFLOAT2 m_scale{ 1.0f, 1.0f };// 大きさ
 
 	float m_direction{ 1.0f };//体の向き（右1.0f　左-1.0f）
 	bool m_isGrounded{ true };//地面にいるか
@@ -112,6 +112,9 @@ Enemy* CreateEnemy(XMFLOAT2 position, ENEMY_TYPE type);
 
 // エネミーが倒されたとき
 void DeleteEnemy(int index);
+
+// Get エネミーの情報
+Enemy* GetEnemy(int index);
 
 
 #endif // ENEMY_H

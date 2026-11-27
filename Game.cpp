@@ -11,6 +11,7 @@
 #include <Xinput.h>
 #include "fade.h"
 #include "player.h"
+#include "map.h"
 #include "enemy.h"
 
 static LIGHTOBJECT GlobalLight;  // �u���C�gOFF�v�𑗂邽�߂����Ɏc��
@@ -19,6 +20,9 @@ static ID3D11ShaderResourceView* g_WhiteTex = nullptr;
 
 void Game_Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 {
+
+	MapInitialize(pDevice, pContext);
+
 	Camera2D_Initialize();   // 2D�J�����̏�����
 	PlayerInitialize();
 	EnemyInitialize();
@@ -59,6 +63,8 @@ void Game_Finalize()
 	SAFE_RELEASE(g_WhiteTex);
 	EnemyFinalize();
 	PlayerFinalize();
+	MapFinalize();
+	//UnloadAudio(g_BgmID);//�T�E���h�̉��
 	Camera2D_Finalize();
 }
 
@@ -71,6 +77,8 @@ void Game_Update()
 		SetFade(40.0f, color, FADE_OUT, SCENE_RESULT);
 		return;
 	}
+	//�X�V����				//��ԏ�
+	MapUpdate();
 
 	GamepadUpdate();
 	PlayerUpdate();
@@ -96,4 +104,5 @@ void Game_Draw()
 	SetBlendState(BLENDSTATE_ALFA);
 
 	PlayerDraw();          // ��ɕ`�������̂����A��ɕ`�������̂���O�ɂȂ�
+	EnemyDraw();
 }
