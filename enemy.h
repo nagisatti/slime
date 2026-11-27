@@ -51,6 +51,8 @@ static constexpr float ENEMY_DOG_GRAVITY{ 0.5f };
 //--------------------計算する定数--------------------
 static constexpr float ENEMY_FRAME_TIME{ 1.0f / 60.0f };
 
+//--------------------最大エネミー数--------------------
+constexpr int ENEMY_MAX = 100;
 
 
 //*****************************************************************************
@@ -73,6 +75,8 @@ private:
 	float m_direction{ 1.0f };//体の向き（右1.0f　左-1.0f）
 	bool m_isGrounded{ true };//地面にいるか
 
+	bool m_contactTrigger = false;// 接触したとき一回だけ、をする用
+
 public:
 	Enemy(XMFLOAT2 initialPos, float initialHp, ENEMY_TYPE type)
 		: Character(initialPos, initialHp), m_type(type) {
@@ -80,16 +84,19 @@ public:
 	~Enemy() = default;
 
 	STATE GetState() const { return m_state; }
+	ENEMY_TYPE GetType() const { return m_type; }
 	const XMFLOAT2& GetVelocity() const { return m_velocity; }
 	const XMFLOAT2& GetScale() const { return m_scale; }
 	float GetDirection() const { return m_direction; }
 	bool GetIsGround() const { return m_isGrounded; }
+	bool GetContactTrigger() const{ return m_contactTrigger; }
 
 	void SetState(STATE state) { m_state = state; }
 	void SetVelocity(const XMFLOAT2& velocity) { m_velocity = velocity; }
 	void SetScale(const XMFLOAT2& scale) { m_scale = scale; }
 	void SetDirection(float direction) { m_direction = direction; }
 	void SetIsGround(bool isGround) { m_isGrounded = isGround; }
+	void SetContactTrigger(bool contactTrigger) { m_contactTrigger = contactTrigger; }
 	
 	void Update();
 	void Draw();
@@ -114,7 +121,7 @@ Enemy* CreateEnemy(XMFLOAT2 position, ENEMY_TYPE type);
 void DeleteEnemy(int index);
 
 // Get エネミーの情報
-Enemy* GetEnemy(int index);
+Enemy* const* GetEnemy();
 
 
 #endif // ENEMY_H
