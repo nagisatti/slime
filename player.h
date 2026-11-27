@@ -21,7 +21,7 @@
 //*****************************************************************************
 //以下の定数には仕様書通りの数値を入れています（後ほど変更する可能性大）
 //--------------------サイズ--------------------
-static constexpr XMFLOAT2 PLAYER_BASE_SIZE{ 50.0f, 50.0f };
+static constexpr XMFLOAT2 PLAYER_BASE_SIZE{ 1.0f, 1.0f };
 static constexpr XMFLOAT2 PLAYER_SCALE{ 1.0f, 1.0f };//大きさの倍率
 
 //--------------------移動--------------------
@@ -34,11 +34,11 @@ static constexpr float PLAYER_DASH_CD{ 0.5f };//ダッシュのクールタイム
 
 //--------------------ジャンプ--------------------
 static constexpr float PLAYER_JUMP_HEIGHT{ 3.0f };//ジャンプの高さ
-static constexpr float PLAYER_JUMP_TIME{ 4.89f };//ジャンプの時間
-static constexpr float PLAYER_JUMP_SPEED{ 1.73f };//ジャンプの初速度
+static constexpr float PLAYER_JUMP_TIME{ 0.5f };//ジャンプの時間
+static constexpr float PLAYER_JUMP_SPEED{ 5.5f };//ジャンプの初速度
 
 //--------------------重力--------------------
-static constexpr float GRAVITY{ 0.5f };
+static constexpr float GRAVITY{ 9.8f };
 
 //--------------------計算する定数--------------------
 static constexpr float FRAME_TIME{ 1.0f / 60.0f };
@@ -117,6 +117,8 @@ public:
 		return XMFLOAT2{ PLAYER_BASE_SIZE.x * m_scale.x, PLAYER_BASE_SIZE.y * m_scale.y };
 	}
 
+
+
 	void SetState(STATE state) { m_state = state; }
 	void SetVelocity(const XMFLOAT2& velocity) { m_velocity = velocity; }
 	void SetScale(const XMFLOAT2& scale) { m_scale = scale; }
@@ -138,5 +140,7 @@ void PlayerInitialize();
 void PlayerFinalize();
 void PlayerUpdate();
 void PlayerDraw();
+
+const XMFLOAT2& PlayerGetPos();
 
 #endif // !PLAYER_H
