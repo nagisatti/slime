@@ -20,8 +20,11 @@
 #include "keyboard.h"
 #include "collision.h"
 
+#include "player.h"
+
 //Šm”F—p
 #include "shader.h"
+
 
 //*****************************************************************************
 // ƒOƒ[ƒoƒ‹•Ï”
@@ -29,10 +32,9 @@
 namespace
 {
 	//optionalF’l‚ª‘¶İ‚·‚é‚©‚à‚µ‚ê‚È‚¢‚µA‚µ‚È‚¢‚©‚à‚µ‚ê‚È‚¢i‚Ê‚é‚Û‚©‚Ç‚¤‚©”»’f‚·‚éj
-	//std::optional<Enemy> g_enemy;
-
-	constexpr int ENEMY_MAX = 100;
 	Enemy* g_enemy[ENEMY_MAX]{};
+	XMFLOAT4 enemyColor{ 0.0f, 0.0f, 0.0f, 0.0f };	// ƒfƒoƒbƒO—p
+	static	ID3D11ShaderResourceView* g_Texture = NULL;
 }
 
 //*****************************************************************************
@@ -45,7 +47,15 @@ static constexpr float COLLISION_MARGIN{ 0.01f };//‰¡‚Ì“–‚½‚è”»’è‚Ì‚¾‚¯A‚‚³‚
 //*****************************************************************************
 void EnemyInitialize()
 {
-	// ƒeƒNƒXƒ`ƒƒ“Ç‚İ‚İ
+	//g_pDevice = pDevice;
+	//g_pContext = pContext;
+
+	//// ƒeƒNƒXƒ`ƒƒ“Ç‚İ‚İ
+	//TexMetadata		metadata;
+	//ScratchImage	image;
+	//LoadFromWICFile(L"asset\\texture\\Title.png", WIC_FLAGS_NONE, &metadata, image);
+	//CreateShaderResourceView(pDevice, image.GetImages(), image.GetImageCount(), metadata, &g_Texture);
+	//assert(g_Texture);//“Ç‚İ‚İ¸”s‚Éƒ_ƒCƒAƒƒO‚ğ•\¦
 	// ƒGƒlƒ~[‹¤’ÊƒŠƒ\[ƒX‰Šú‰»
 }
 
@@ -80,17 +90,80 @@ void EnemyUpdate()
 			g_enemy[i]->Update();
 		}
 	}
+
+	if (Keyboard_IsKeyDownTrigger(KK_E))
+	{
+		DeleteEnemy(0);
+	}
 }
 
 //=====‚P‘Ì‚²‚Æ‚Ég—p‚µ‚Ä‚¢‚é‚©Šm”FŒãXV=====
 void Enemy::Update()
 {
+	ENEMY_TYPE enemyType = GetType();
 	XMFLOAT2 enemyPosition = GetPos();
 	XMFLOAT2 enemyScale = GetScale();
+	XMFLOAT2 playerPos = PlayerGetPos();
+	float enemyDirection = GetDirection();
+	XMFLOAT2 enemyVelocity = XMFLOAT2(0.0f, 0.0f);
+	bool contactTrigger = GetContactTrigger();
+
+	Player* player = GetPlayer();
+
 
 	// ˆÚ“®
-	// “–‚½‚è”»’è
+	if (enemyType == DOG)						// ‰¼@1.5 ` -4.0‚ğs‚Á‚½‚è‚«‚½‚èB’n–Ê“™‚Ì“–‚½‚è”»’è‚àd—Í‚à‚È‚µB¶‰E‚É“®‚­‚¾‚¯B
+	{
+		if (enemyDirection == 1.0f)
+		{
+			if (enemyPosition.x <= 1.5f)
+			{
+				enemyVelocity.x += 0.01f;
+			}
+			else
+			{
+				enemyVelocity.x = 0.0f;
+				SetDirection(-1.0f);
+			}
+		}
+		else if (enemyDirection == -1.0f)
+		{
+			if (enemyPosition.x >= -4.0f)
+			{
+				enemyVelocity.x += -0.01f;
+			}
+			else
+			{
+				enemyVelocity.x = 0.0f;
+				SetDirection(1.0f);
+			}
+		}
+	}
 	
+	// “–‚½‚è”»’è
+	if ((enemyPosition.x - (enemyScale.x / 2) < (player->GetPos().x + (player->GetScale().x / 2))) &&
+		(enemyPosition.x + (enemyScale.x / 2) > (player->GetPos().x - (player->GetScale().x / 2))) &&
+		(enemyPosition.y - (enemyScale.y / 2) < (player->GetPos().y + (player->GetScale().y / 2))) &&
+		(enemyPosition.y + (enemyScale.y / 2) > (player->GetPos().y - (player->GetScale().y / 2))))
+	{
+		enemyColor = XMFLOAT4{ 1.0f, 0.0f, 0.0f, 1.0f };
+
+		if (contactTrigger == false) // ÚG‚µ‚½‚Æ‚«‚P‰ñ
+		{
+			enemyColor = XMFLOAT4{ 0.0f, 0.0f, 1.0f, 1.0f };
+			player->SetWater(player->GetWater() - 10.0f);
+			SetContactTrigger(true);
+		}
+	}
+	else
+	{
+		enemyColor = XMFLOAT4{ 1.0f, 0.5f, 0.5f, 1.0f };
+		SetContactTrigger(false);
+	}
+	
+	enemyPosition.x += enemyVelocity.x;
+	enemyPosition.y += enemyVelocity.y;
+	SetPos(enemyPosition);
 }
 
 //*****************************************************************************
@@ -112,7 +185,7 @@ void EnemyDraw()
 void Enemy::Draw()
 {
 	// “G•`‰æ
-	DrawSprite(GetPos(), GetScale(), XMFLOAT4{ 1.0f, 0.0f, 0.0f, 1.0f });
+	DrawSprite(GetPos(), GetScale(), enemyColor);
 }
 
 //*****************************************************************************
@@ -158,27 +231,19 @@ void DeleteEnemy(int index)
 }
 // g‚¤‚Æ‚«‚Í@DeleteEnemy(i);@“™
 
-Enemy* GetEnemy(int index)
+Enemy* const* GetEnemy()
 {
-	if (index < 0 || index >= ENEMY_MAX)
-	{
-		return nullptr;
-	}
-
-	return g_enemy[index];
+	return g_enemy;
 }
 /*
 
+Enemy* const* enemy = GetEnemy();
+
 for (int i = 0; i < ENEMY_MAX; i++)
+{
+	if (enemy[i] != nullptr)
 	{
-	Enemy* enemy = GetEnemy(0);
-
-	if (enemy != nullptr)
-	{
-		XMFLOAT2 enemyPos = enemy->GetPos();
-
-		// enemyPos.x
-		// enemyPos.y
+		XMFLOAT2 pos = enemy[i]->GetPos();
 	}
 }		//‚Á‚ÄŠ´‚¶‚Åg‚¤
 
