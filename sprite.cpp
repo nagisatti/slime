@@ -41,51 +41,43 @@ void		FinalizeSprite()
 //=====================================
 void DrawSprite(XMFLOAT2 pos, XMFLOAT2 size, XMFLOAT4 col)
 {
-
 	g_pDevice = Direct3D_GetDevice();
 	g_pContext = Direct3D_GetDeviceContext();
 
-	// 頂点バッファをロックする
 	D3D11_MAPPED_SUBRESOURCE msr;
 	g_pContext->Map(g_pVertexBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
-
-	// 頂点バッファへの仮想ポインタを取得
 	Vertex3D* v = (Vertex3D*)msr.pData;
 
-	// 指定の位置に指定のサイズ、色の四角形を描画する /////////テクスチャ追加
-	v[0].position = { pos.x - (size.x / 2), pos.y - (size.y / 2), 0.0f };
+	// 半分のサイズを先に計算しておく(見やすくするため)
+	float hw = size.x * 0.5f;  // 横の半分
+	float hh = size.y * 0.5f;  // 縦の半分
+
+	// Y上向きの世界なので、v[0],v[1]を「上」、v[2],v[3]を「下」にする
+	// 並び順:左上 → 右上 → 左下 → 右下(これで時計回りの表向きになる)
+	v[0].position = { pos.x - hw, pos.y + hh, 0.0f };  // 左上
 	v[0].color = col;
-	v[0].texCoord = { 0.0f, 0.0f };
+	v[0].texCoord = { 0.0f, 0.0f };                    // テクスチャの左上
 
-	v[1].position = { pos.x + (size.x / 2), pos.y - (size.y / 2), 0.0f };
+	v[1].position = { pos.x + hw, pos.y + hh, 0.0f };  // 右上
 	v[1].color = col;
-	v[1].texCoord = { 1.0f, 0.0f };
+	v[1].texCoord = { 1.0f, 0.0f };                    // テクスチャの右上
 
-	v[2].position = { pos.x - (size.x / 2), pos.y + (size.y / 2), 0.0f };
+	v[2].position = { pos.x - hw, pos.y - hh, 0.0f };  // 左下
 	v[2].color = col;
-	v[2].texCoord = { 0.0f, 1.0f };
+	v[2].texCoord = { 0.0f, 1.0f };                    // テクスチャの左下
 
-	v[3].position = { pos.x + (size.x / 2), pos.y + (size.y / 2), 0.0f };
+	v[3].position = { pos.x + hw, pos.y - hh, 0.0f };  // 右下
 	v[3].color = col;
-	v[3].texCoord = { 1.0f, 1.0f };
+	v[3].texCoord = { 1.0f, 1.0f };                    // テクスチャの右下
 
-
-	// 頂点バッファのロックを解除
 	g_pContext->Unmap(g_pVertexBuffer, 0);
 
-	// 頂点バッファを描画パイプラインに設定
-	UINT stride = sizeof(Vertex3D);//頂点１つあたりのサイズを指定
+	UINT stride = sizeof(Vertex3D);
 	UINT offset = 0;
 	g_pContext->IASetVertexBuffers(0, 1, &g_pVertexBuffer, &stride, &offset);
-
-	// プリミティブトポロジ設定　ポリゴンの描画ルール的なもの
 	g_pContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-
-	// ポリゴン描画命令発行
-	g_pContext->Draw(4, 0);//表示に使用する頂点数を指定
-
+	g_pContext->Draw(4, 0);
 }
-
 
 void	DrawSpriteEx(XMFLOAT2 pos, XMFLOAT2 size, XMFLOAT4 col, int bno, int wc, int hc)
 {

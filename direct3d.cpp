@@ -32,7 +32,7 @@ static ID3D11BlendState* bState[BLENDSTATE_MAX];
 static ID3D11DepthStencilState* g_DepthStateEnable;
 static ID3D11DepthStencilState* g_DepthStateDisable;
 
-
+static ID3D11RasterizerState* g_pRasterizerState = nullptr; // ラスタライザーステート
 
 
 bool Direct3D_Initialize(HWND hWnd)
@@ -170,6 +170,14 @@ bool Direct3D_Initialize(HWND hWnd)
 
 	g_pDeviceContext->OMSetDepthStencilState(g_DepthStateDisable, NULL); //デフォルト　深度無効
 
+	// ラスタライザーステート設定(ポリゴンの表裏・塗りつぶし方のルール)
+	D3D11_RASTERIZER_DESC rasterDesc{};                  // 全部0で初期化
+	rasterDesc.FillMode = D3D11_FILL_SOLID;              // 塗りつぶして描画
+	rasterDesc.CullMode = D3D11_CULL_NONE;               // 裏向きでも描画する(カリングなし)
+	rasterDesc.FrontCounterClockwise = FALSE;            // 時計回りが表(デフォルトと同じ)
+	rasterDesc.DepthClipEnable = TRUE;                   // 奥行きの範囲外はクリップする
+	g_pDevice->CreateRasterizerState(&rasterDesc, &g_pRasterizerState);
+	g_pDeviceContext->RSSetState(g_pRasterizerState);    // 描画パイプラインにセット
 
     return true;
 }
@@ -177,6 +185,12 @@ bool Direct3D_Initialize(HWND hWnd)
 void Direct3D_Finalize()
 {
 	releaseBackBuffer();
+
+	// ラスタライザーステートの解放
+	if (g_pRasterizerState) {
+		g_pRasterizerState->Release();
+		g_pRasterizerState = nullptr;
+	}
 
 	if (g_pSwapChain) {
 		g_pSwapChain->Release();
