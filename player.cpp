@@ -1,15 +1,15 @@
 /*======================================================================================//
-*  Eplayer.cpp
-*    ƒvƒŒƒCƒ„[‚Ì“®‚«‚âó‘Ô‚ğ‘‚¢‚Ä‚é
+*  ãƒ»player.cpp
+*    ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®å‹•ãã‚„çŠ¶æ…‹ã‚’æ›¸ã„ã¦ã‚‹
 *
-*    ì¬Ò ‘å’Ë  •ÏX“ú 2026/11/16
-*    XVÒ O‘ãì  •ÏX“ú 2026/11/22
+*    ä½œæˆè€… å¤§å¡š  å¤‰æ›´æ—¥ 2026/11/26
+*    æ›´æ–°è€… ä¸‰ä»£å·  å¤‰æ›´æ—¥ 2026/11/22
 *
 *
 //======================================================================================*/
 
 //*****************************************************************************
-// ƒCƒ“ƒNƒ‹[ƒhƒtƒ@ƒCƒ‹
+// ã‚¤ãƒ³ã‚¯ãƒ«ãƒ¼ãƒ‰ãƒ•ã‚¡ã‚¤ãƒ«
 //*****************************************************************************
 #include "player.h"
 #include <optional>
@@ -18,99 +18,109 @@
 #include "keyboard.h"
 #include "collision.h"
 
-//Šm”F—p
+//ç¢ºèªç”¨
 #include "shader.h"
 
 //*****************************************************************************
-// ’è”
+// å®šæ•°
 //*****************************************************************************
-static constexpr int BUTTON_B{ 1 };//ƒWƒƒƒ“ƒvƒ{ƒ^ƒ“
-static constexpr int BUTTON_Y{ 3 };//ƒ_ƒbƒVƒ…ƒ{ƒ^ƒ“
-static constexpr float COLLISION_MARGIN{ 0.01f };//‰¡‚Ì“–‚½‚è”»’è‚Ì‚¾‚¯A‚‚³‚ğ­‚µ¬‚³‚­‚·‚é—Ê
+static constexpr int BUTTON_A{ 0 };// åˆ‡ã‚Šé›¢ã—ãƒœã‚¿ãƒ³
+static constexpr int BUTTON_B{ 1 };//ã‚¸ãƒ£ãƒ³ãƒ—ãƒœã‚¿ãƒ³
+static constexpr int BUTTON_Y{ 3 };//ãƒ€ãƒƒã‚·ãƒ¥ãƒœã‚¿ãƒ³
+static constexpr float COLLISION_MARGIN{ 0.01f };//æ¨ªã®å½“ãŸã‚Šåˆ¤å®šã®æ™‚ã ã‘ã€é«˜ã•ã‚’å°‘ã—å°ã•ãã™ã‚‹é‡
 static constexpr XMFLOAT4 COLOR_PLAYER{ 1.0f, 1.0f, 1.0f, 1.0f };
 static constexpr XMFLOAT4 COLOR_BLOCK{ 0.5f, 0.5f, 0.5f, 1.0f };
+static constexpr float MIN_WATER_GAGE{ 20.0f }; // ç‰¹æ®Šç§»å‹•æ™‚ã«å¿…è¦ãªæœ€ä½é™ã®æ°´åˆ†é‡
 
 struct TestBlock
 {
-	XMFLOAT2 pos;//’†SƒTƒCƒY
-	XMFLOAT2 size;//ƒTƒCƒY
+	XMFLOAT2 pos;//ä¸­å¿ƒã‚µã‚¤ã‚º
+	XMFLOAT2 size;//ã‚µã‚¤ã‚º
 };
 
 static constexpr TestBlock TEST_BLOCKS[] =
 {
-	{{ 0.0f, 0.25f}, {20.0f, 0.5f}},  // °   :ã–Ê‚Ì‚‚³ y=0.5B‰¡‚Í20’PˆÊ‚Å‰æ–Ê‚ğ–„‚ß‚é
-	{{ 2.5f, 1.0f }, { 0.5f, 1.0f}},  // •Ç   :°‚Ìã‚É—§‚Â(y=0.5`1.5)
-	{{-1.8f, 1.8f }, { 1.2f, 0.3f}},  // ‘«ê :’ˆ‚É•‚‚¢‚Ä‚é”Â
+	{{ 0.0f, 0.25f}, {20.0f, 0.5f}},  // åºŠ   :ä¸Šé¢ã®é«˜ã• y=0.5ã€‚æ¨ªã¯20å˜ä½ã§ç”»é¢ã‚’åŸ‹ã‚ã‚‹
+	{{ 2.5f, 1.0f }, { 0.5f, 1.0f}},  // å£   :åºŠã®ä¸Šã«ç«‹ã¤(y=0.5ï½1.5)
+	{{-1.8f, 1.8f }, { 1.2f, 0.3f}},  // è¶³å ´ :å®™ã«æµ®ã„ã¦ã‚‹æ¿
 };
 
 //*****************************************************************************
-// ƒOƒ[ƒoƒ‹•Ï”
+// ã‚°ãƒ­ãƒ¼ãƒãƒ«å¤‰æ•°
 //*****************************************************************************
 namespace 
 {
-	//optionalF’l‚ª‘¶İ‚·‚é‚©‚à‚µ‚ê‚È‚¢‚µA‚µ‚È‚¢‚©‚à‚µ‚ê‚È‚¢i‚Ê‚é‚Û‚©‚Ç‚¤‚©”»’f‚·‚éj
+	//optionalï¼šå€¤ãŒå­˜åœ¨ã™ã‚‹ã‹ã‚‚ã—ã‚Œãªã„ã—ã€ã—ãªã„ã‹ã‚‚ã—ã‚Œãªã„ï¼ˆã¬ã‚‹ã½ã‹ã©ã†ã‹åˆ¤æ–­ã™ã‚‹ï¼‰
 	std::optional<Player> g_player;
+
 }
 
 //*****************************************************************************
-// ƒvƒƒgƒ^ƒCƒvéŒ¾
+// ãƒ—ãƒ­ãƒˆã‚¿ã‚¤ãƒ—å®£è¨€
 //*****************************************************************************
-//--------------------ó‘Ô‚²‚Æ‚ÌŠÖ”--------------------
+//--------------------çŠ¶æ…‹ã”ã¨ã®é–¢æ•°--------------------
 static void PlayerIdle(Player& player);
 static void PlayerMove(Player& player);
 static void PlayerJump(Player& player);
 static void PlayerDash(Player& player);
-//--------------------ó‘Ô‚ğØ‚è‘Ö‚¦‚é--------------------
+static void PlayerWaterMove(Player& player);
+//--------------------çŠ¶æ…‹ã‚’åˆ‡ã‚Šæ›¿ãˆã‚‹--------------------
 static void StartJump(Player& player);
 static void StartDash(Player& player);
-//--------------------“ü—Í--------------------
+//--------------------å…¥åŠ›--------------------
 static float GetInputX();
 static bool IsJumpPressed();
 static bool IsDashPressed();
-//--------------------‚»‚Ì‘¼‚ÌŠÖ”--------------------
+//--------------------ãã®ä»–ã®é–¢æ•°--------------------
 static void ApplyMoveInput(Player& player);
 static bool CheckJumpAndDash(Player& player);
 static void ApplyGravity(Player& player);
 static void MoveAndCollide(Player& player);
 static bool HitTestField(const XMFLOAT2& pos, const XMFLOAT2& size, XMFLOAT2& hitPos, XMFLOAT2& hitSize);
+static void ConsumeWater(Player& player, float stretchDistance);
+static void StartStretch(Player& player);
+static void UpdateStretchTip(Player& player, const XMFLOAT2& direction);
 
 
 //*****************************************************************************
-// ‰Šú‰»
+// åˆæœŸåŒ–
 //*****************************************************************************
 void PlayerInitialize()
 {
-	//emplaceF¦‚¢•Ö—˜‚É‚È‚Á‚½unewv‚İ‚½‚¢‚ÈŠ´‚¶
+	//emplaceï¼šå‡„ã„ä¾¿åˆ©ã«ãªã£ãŸã€Œnewã€ã¿ãŸã„ãªæ„Ÿã˜
 	g_player.emplace(XMFLOAT2{ 0.0f, 2.0f }, 10.0f);
 	
+	// æ°´åˆ†é‡ã®åˆæœŸåŒ–
+	g_player->SetWater(100.0f);
+
 }
 
 //*****************************************************************************
-// I—¹ˆ—
+// çµ‚äº†å‡¦ç†
 //*****************************************************************************
 void PlayerFinalize()
 {
-	//Player‚ğ”jŠü‚·‚é
+	//Playerã‚’ç ´æ£„ã™ã‚‹
 	g_player.reset();
 }
 
 //*****************************************************************************
-// XV
+// æ›´æ–°
 //*****************************************************************************
 void PlayerUpdate()
 {
-	//player‚ªì‚ç‚ê‚Ä‚¢‚È‚¯‚ê‚Î‰½‚à‚µ‚È‚¢
+	//playerãŒä½œã‚‰ã‚Œã¦ã„ãªã‘ã‚Œã°ä½•ã‚‚ã—ãªã„
 	if (!g_player)
 	{
 		return;
 	}
 
-	//’†g‚ğæ‚èo‚·
+	//ä¸­èº«ã‚’å–ã‚Šå‡ºã™
 	Player& player = *g_player;
-	//ƒN[ƒ‹ƒ^ƒCƒ€‚ğ‚PƒtƒŒ[ƒ€•ªŒ¸‚ç‚·
+	//ã‚¯ãƒ¼ãƒ«ã‚¿ã‚¤ãƒ ã‚’ï¼‘ãƒ•ãƒ¬ãƒ¼ãƒ åˆ†æ¸›ã‚‰ã™
 	player.SetDashCDTimer((std::max)(0.0f, player.GetDashCDTimer() - FRAME_TIME));
 
-	//ó‘Ô‚²‚Æ‚ÉŒÄ‚ÔŠÖ”‚ğØ‚è‘Ö‚¦‚é
+	//çŠ¶æ…‹ã”ã¨ã«å‘¼ã¶é–¢æ•°ã‚’åˆ‡ã‚Šæ›¿ãˆã‚‹
 	switch (player.GetState())
 	{
 	case Player::IDLE:
@@ -128,46 +138,57 @@ void PlayerUpdate()
 	case Player::DASH:
 		PlayerDash(player);
 		break;
+
+	case Player::WATERMOVE:
+		PlayerWaterMove(player);
+		break;
 	}
 
-	//d—Í
+	//é‡åŠ›
 	ApplyGravity(player);
 
-	//ˆÚ“®‚Æ“–‚½‚è”»’è
+	//ç§»å‹•ã¨å½“ãŸã‚Šåˆ¤å®š
 	MoveAndCollide(player);
 }
 
 //*****************************************************************************
-// •`‰æ
+// æç”»
 //*****************************************************************************
 void PlayerDraw()
 {
-	if (!g_player)
-	{
-		return;
-	}
+	// ã‚¬ãƒ¼ãƒ‰å‡¦ç†
+	if (!g_player) return;
 
 	const Player& player = *g_player;
 
-	//‰¼‚Ì’n–ÊE•Ç
+	//ä»®ã®åœ°é¢ãƒ»å£
 	for (const TestBlock& block : TEST_BLOCKS)
 	{
 		DrawSprite(block.pos, block.size, COLOR_BLOCK);
 	}
 
-	//ƒvƒŒƒCƒ„[
+	//ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼
 	DrawSprite(player.GetPos(), player.GetSize(), COLOR_PLAYER);
+
+	// ä¼¸ã°ã—ãŸä½“ã®æç”»
+	if (player.GetState() == Player::WATERMOVE)
+	{
+		DrawSprite(	player.GetStretchTip(), XMFLOAT2{ 10.0f, 10.0f }, XMFLOAT4{ 1.0f, 0.0f, 0.0f, 1.0f });
+	}
 }
 
 //*****************************************************************************
-// ‘Ò‹@ó‘ÔFŒ¸‘¬‚µ‚Ä~‚Ü‚éB¶ƒXƒeƒBƒbƒN‚Ì“ü—Í‚ª‚ ‚Á‚½‚çMOVE‚Ö
+// å¾…æ©ŸçŠ¶æ…‹ï¼šæ¸›é€Ÿã—ã¦æ­¢ã¾ã‚‹ã€‚å·¦ã‚¹ãƒ†ã‚£ãƒƒã‚¯ã®å…¥åŠ›ãŒã‚ã£ãŸã‚‰MOVEã¸
 //*****************************************************************************
 static void PlayerIdle(Player& player)
 {
-	//¡‚Ì‘¬“x‚ğƒRƒs[
+	const float x = GamepadGetRightAxisX();
+	const float y = GamepadGetRightAxisY();
+
+	//ä»Šã®é€Ÿåº¦ã‚’ã‚³ãƒ”ãƒ¼
 	XMFLOAT2 velocity = player.GetVelocity();
 
-	//Œ¸‘¬‚µ‚Ä~‚Ü‚é
+	//æ¸›é€Ÿã—ã¦æ­¢ã¾ã‚‹
 	float decel = player.GetDecelerationX() * FRAME_TIME;
 	if (velocity.x > 0.0f)
 	{
@@ -180,77 +201,99 @@ static void PlayerIdle(Player& player)
 
 	player.SetVelocity(velocity);
 
-	//ƒWƒƒƒ“ƒvEƒ_ƒbƒVƒ…‚ÉØ‚è‘Ö‚í‚Á‚½‚çA‚±‚±‚ÅI‚í‚é
+	//ã‚¸ãƒ£ãƒ³ãƒ—ãƒ»ãƒ€ãƒƒã‚·ãƒ¥ã«åˆ‡ã‚Šæ›¿ã‚ã£ãŸã‚‰ã€ã“ã“ã§çµ‚ã‚ã‚‹
 	if (CheckJumpAndDash(player))
 	{
 		return;
 	}
 
-	//¶‰E‚ª‰Ÿ‚³‚ê‚½‚çˆÚ“®ó‘Ô‚Ö
+	//å·¦å³ãŒæŠ¼ã•ã‚ŒãŸã‚‰ç§»å‹•çŠ¶æ…‹ã¸
 	if (GetInputX() != 0.0f)
 	{
 		player.SetState(Player::MOVE);
 	}
+
+	// å³ã‚¹ãƒ†ã‚£ãƒƒã‚¯å‹•ã‹ã—ãŸã‚‰ç‰¹æ®Šç§»å‹•ã¸
+	// èª¤å…¥åŠ›é˜²æ­¢
+	if (x * x + y * y > 0.2f * 0.2f && player.GetWater() > MIN_WATER_GAGE)
+	{
+		StartStretch(player);
+		player.SetState(Player::WATERMOVE);
+		return;
+	}
+
+
 }
 
 //*****************************************************************************
-// ˆÚ“®ó‘ÔF¶ƒXƒeƒBƒbƒN‚ğ“|‚µ‚Ä‚¢‚é•ûŒü‚Éi‚ŞB—£‚µ‚½‚çIDLE‚Ö
+// ç§»å‹•çŠ¶æ…‹ï¼šå·¦ã‚¹ãƒ†ã‚£ãƒƒã‚¯ã‚’å€’ã—ã¦ã„ã‚‹æ–¹å‘ã«é€²ã‚€ã€‚é›¢ã—ãŸã‚‰IDLEã¸
 //*****************************************************************************
 static void PlayerMove(Player& player)
 {
-	//ƒWƒƒƒ“ƒvEƒ_ƒbƒVƒ…‚ÉØ‚è‘Ö‚í‚Á‚½‚çA‚±‚±‚ÅI‚í‚é
+	const float x = GamepadGetRightAxisX();
+	const float y = GamepadGetRightAxisY();
+
+	//ã‚¸ãƒ£ãƒ³ãƒ—ãƒ»ãƒ€ãƒƒã‚·ãƒ¥ã«åˆ‡ã‚Šæ›¿ã‚ã£ãŸã‚‰ã€ã“ã“ã§çµ‚ã‚ã‚‹
 	if (CheckJumpAndDash(player))
 	{
 		return;
 	}
 
+	// å³ã‚¹ãƒ†ã‚£ãƒƒã‚¯å‹•ã‹ã—ãŸã‚‰ç‰¹æ®Šç§»å‹•ã¸
+	// èª¤å…¥åŠ›é˜²æ­¢
+	if (x * x + y * y > 0.2f * 0.2f && player.GetWater() > MIN_WATER_GAGE)
+	{
+		StartStretch(player);
+		player.SetState(Player::WATERMOVE);
+		return;
+	}
 
-	//‰½‚à‚µ‚Ä‚¢‚È‚¯‚ê‚Î‘Ò‹@ó‘Ô‚Ö
+	//ä½•ã‚‚ã—ã¦ã„ãªã‘ã‚Œã°å¾…æ©ŸçŠ¶æ…‹ã¸
 	if (GetInputX() == 0.0f)
 	{
 		player.SetState(Player::IDLE);
 		return;
 	}
 
-	//ƒXƒeƒBƒbƒN‚ª“|‚ê‚½•ûŒü‚Éi‚Ş
+	//ã‚¹ãƒ†ã‚£ãƒƒã‚¯ãŒå€’ã‚ŒãŸæ–¹å‘ã«é€²ã‚€
 	ApplyMoveInput(player);
 }
 
 //*****************************************************************************
-// ƒWƒƒƒ“ƒvó‘ÔF¶‰E‚É“®‚¯‚ÄAƒWƒƒƒ“ƒv‚à‚Å‚«‚éBd—Í‚Å—‚¿‚é
+// ã‚¸ãƒ£ãƒ³ãƒ—çŠ¶æ…‹ï¼šå·¦å³ã«å‹•ã‘ã¦ã€ã‚¸ãƒ£ãƒ³ãƒ—ã‚‚ã§ãã‚‹ã€‚é‡åŠ›ã§è½ã¡ã‚‹
 //*****************************************************************************
 static void PlayerJump(Player& player)
 {
-	//‹ó’†ƒ_ƒbƒVƒ…iƒN[ƒ‹ƒ^ƒCƒ€‚ªI‚í‚Á‚Ä‚¢‚½‚çj
+	//ç©ºä¸­ãƒ€ãƒƒã‚·ãƒ¥ï¼ˆã‚¯ãƒ¼ãƒ«ã‚¿ã‚¤ãƒ ãŒçµ‚ã‚ã£ã¦ã„ãŸã‚‰ï¼‰
 	if (IsDashPressed() && player.GetDashCDTimer() <= 0.0f)
 	{
 		StartDash(player);
 		return;
 	}
 
-	//‹ó’†‚Å‚à¶‰E‚É“®‚¯‚é
+	//ç©ºä¸­ã§ã‚‚å·¦å³ã«å‹•ã‘ã‚‹
 	ApplyMoveInput(player);
 }
 
 //*****************************************************************************
-// ƒ_ƒbƒVƒ…ó‘ÔFŒü‚¢‚Ä‚¢‚é•ûŒü‚É’ZŠÔ‘f‘‚­i‚Ş
+// ãƒ€ãƒƒã‚·ãƒ¥çŠ¶æ…‹ï¼šå‘ã„ã¦ã„ã‚‹æ–¹å‘ã«çŸ­æ™‚é–“ç´ æ—©ãé€²ã‚€
 //*****************************************************************************
 static void PlayerDash(Player& player)
 {
-	//Œü‚¢‚Ä‚¢‚é•ûŒü‚Éƒ_ƒbƒVƒ…‚·‚éiƒ_ƒbƒVƒ…’†‚Í—‚¿‚È‚¢j
+	//å‘ã„ã¦ã„ã‚‹æ–¹å‘ã«ãƒ€ãƒƒã‚·ãƒ¥ã™ã‚‹ï¼ˆãƒ€ãƒƒã‚·ãƒ¥ä¸­ã¯è½ã¡ãªã„ï¼‰
 	player.SetVelocity(XMFLOAT2{ PLAYER_DASH_SPEED * player.GetDirection(), 0.0f });
 
-	//Œo‰ßŠÔ‚ğ‚PƒtƒŒ[ƒ€•ª‘‚â‚·
+	//çµŒéæ™‚é–“ã‚’ï¼‘ãƒ•ãƒ¬ãƒ¼ãƒ åˆ†å¢—ã‚„ã™
 	player.SetDashTimer(player.GetDashTimer() + FRAME_TIME);
 
 	if (player.GetDashTimer() >= PLAYER_DASH_TIME)
 	{
-		//ƒ_ƒbƒVƒ…‚Ì¨‚¢‚ğ~‚ß‚é
+		//ãƒ€ãƒƒã‚·ãƒ¥ã®å‹¢ã„ã‚’æ­¢ã‚ã‚‹
 		player.SetVelocity(XMFLOAT2{ 0.0f, 0.0f });
 
 		player.SetDashCDTimer(PLAYER_DASH_CD);
 
-		//’n–Ê‚É‚¢‚ê‚ÎIDLEA‹ó’†‚È‚çJUMP
+		//åœ°é¢ã«ã„ã‚Œã°IDLEã€ç©ºä¸­ãªã‚‰JUMP
 		if (player.GetIsGround())
 		{
 			player.SetState(Player::IDLE);
@@ -263,12 +306,12 @@ static void PlayerDash(Player& player)
 }
 
 //*****************************************************************************
-// ƒWƒƒƒ“ƒvó‘Ô‚ÉØ‚è‘Ö‚¦‚éŠÖ”
+// ã‚¸ãƒ£ãƒ³ãƒ—çŠ¶æ…‹ã«åˆ‡ã‚Šæ›¿ãˆã‚‹é–¢æ•°
 //*****************************************************************************
 static void StartJump(Player& player)
 {
 	XMFLOAT2 velocity = player.GetVelocity();
-	//ãŒü‚«‚É‰‘¬“x‚ğ—^‚¦‚é
+	//ä¸Šå‘ãã«åˆé€Ÿåº¦ã‚’ä¸ãˆã‚‹
 	velocity.y = PLAYER_JUMP_SPEED;
 	player.SetVelocity(velocity);
 	player.SetIsGround(false);
@@ -276,19 +319,86 @@ static void StartJump(Player& player)
 }
 
 //*****************************************************************************
-// ƒ_ƒbƒVƒ…ó‘Ô‚ÉØ‚è‘Ö‚¦‚éŠÖ”
+// ç‰¹æ®Šç§»å‹•ã®é–¢æ•°
+//*****************************************************************************
+// ç‰¹å®šã®è·é›¢ä¼¸ã³ãŸã‚‰åˆ‡ã‚Œã‚‹ã‚ˆã†ã«ã—ã¦ã€ãã‚Œä»¥å¤–ã¯è‡ªå‹•ã§çŠ¶æ…‹ã‚’å¤‰æ›´ã™ã‚‹ã‹ã©ã†ã‹
+static void PlayerWaterMove(Player& player)
+{
+	// ã‚¬ãƒ¼ãƒ‰å‡¦ç†
+	if (player.GetWater() < MIN_WATER_GAGE)
+	{
+		g_player->SetState(Player::IDLE);
+		return;
+	}
+
+	const float x = GamepadGetRightAxisX();
+	const float y = GamepadGetRightAxisY();
+
+	// ã‚¹ãƒ†ã‚£ãƒƒã‚¯ã®å…¥åŠ›æ–¹å‘
+	XMFLOAT2 direction{ 0.0f, 0.0f };
+
+	// ä¸Šãƒ»å·¦ãƒ»å³ã®ã†ã¡ã€å…¥åŠ›ã®å¼·ã„æ–¹å‘ã‚’é¸ã¶
+	// ã‚¹ãƒ†ã‚£ãƒƒã‚¯ã¯ä¸ŠãŒã€Œ-ã€ã€ã‚²ãƒ¼ãƒ åº§æ¨™ã¯ä¸ŠãŒã€Œ+ã€
+	if (y < -0.2f && -y >= std::abs(x))
+	{
+		direction.y = 1.0f;
+	}
+	else if (std::abs(x) > 0.2f)
+	{
+		direction.x = x > 0.0f ? 1.0f : -1.0f;
+	}
+	else
+	{
+		return;
+	}
+
+	UpdateStretchTip(player, direction);
+
+	// 1ãƒ•ãƒ¬å‰ã®ä¼¸ã³ãŸè·é›¢
+	float oldLength = player.GetCurLength();
+
+	player.SetCurLength( oldLength + player.GetLongerSpeed() * FRAME_TIME);
+
+	const float stretchDistance = (std::max)(0.0f, player.GetCurLength() - oldLength);
+
+	ConsumeWater(player, stretchDistance);
+
+
+	if (GamepadIsPressed(BUTTON_A))
+	{
+		player.SetState(Player::IDLE);
+		return;
+	}
+
+}
+
+//*****************************************************************************
+// æ°´åˆ†æ¶ˆè²»ç”¨é–¢æ•°
+//*****************************************************************************
+static void ConsumeWater(Player& player, float stretchDistance)
+{
+	// ã‚¬ãƒ¼ãƒ‰å‡¦ç†
+	if (stretchDistance <= 0.0f) return;
+
+	player.SetWater(player.GetWater() - stretchDistance * player.GetDecayWater());
+
+	return;
+}
+
+//*****************************************************************************
+// ãƒ€ãƒƒã‚·ãƒ¥çŠ¶æ…‹ã«åˆ‡ã‚Šæ›¿ãˆã‚‹é–¢æ•°
 //*****************************************************************************
 static void StartDash(Player& player)
 {
-	//Œo‰ßŠÔ‚ğ‚O‚É–ß‚·
+	//çµŒéæ™‚é–“ã‚’ï¼ã«æˆ»ã™
 	player.SetDashTimer(0.0f);
 	player.SetState(Player::DASH);
 }
 
 //*****************************************************************************
-// ¶ƒXƒeƒBƒbƒN‚Ì¶‰E“ü—Í
-// FƒQ[ƒ€ƒpƒbƒh—Dæ
-// FG‚Á‚Ä‚¢‚È‚¯‚ê‚ÎƒL[ƒ{[ƒh‚ğŒ©‚é
+// å·¦ã‚¹ãƒ†ã‚£ãƒƒã‚¯ã®å·¦å³å…¥åŠ›
+// ï¼šã‚²ãƒ¼ãƒ ãƒ‘ãƒƒãƒ‰å„ªå…ˆ
+// ï¼šè§¦ã£ã¦ã„ãªã‘ã‚Œã°ã‚­ãƒ¼ãƒœãƒ¼ãƒ‰ã‚’è¦‹ã‚‹
 //*****************************************************************************
 static float GetInputX()
 {
@@ -311,9 +421,9 @@ static float GetInputX()
 }
 
 //*****************************************************************************
-// ƒWƒƒƒ“ƒv‚Ì“ü—Í
-// FƒQ[ƒ€ƒpƒbƒh—Dæ
-// FG‚Á‚Ä‚¢‚È‚¯‚ê‚ÎƒL[ƒ{[ƒh‚ğŒ©‚é
+// ã‚¸ãƒ£ãƒ³ãƒ—ã®å…¥åŠ›
+// ï¼šã‚²ãƒ¼ãƒ ãƒ‘ãƒƒãƒ‰å„ªå…ˆ
+// ï¼šè§¦ã£ã¦ã„ãªã‘ã‚Œã°ã‚­ãƒ¼ãƒœãƒ¼ãƒ‰ã‚’è¦‹ã‚‹
 //*****************************************************************************
 static bool IsJumpPressed()
 {
@@ -331,9 +441,9 @@ static bool IsJumpPressed()
 }
 
 //*****************************************************************************
-// ƒ_ƒbƒVƒ…‚Ì“ü—Í
-// FƒQ[ƒ€ƒpƒbƒh—Dæ
-// FG‚Á‚Ä‚¢‚È‚¯‚ê‚ÎƒL[ƒ{[ƒh‚ğŒ©‚é
+// ãƒ€ãƒƒã‚·ãƒ¥ã®å…¥åŠ›
+// ï¼šã‚²ãƒ¼ãƒ ãƒ‘ãƒƒãƒ‰å„ªå…ˆ
+// ï¼šè§¦ã£ã¦ã„ãªã‘ã‚Œã°ã‚­ãƒ¼ãƒœãƒ¼ãƒ‰ã‚’è¦‹ã‚‹
 //*****************************************************************************
 static bool IsDashPressed()
 {
@@ -351,7 +461,7 @@ static bool IsDashPressed()
 }
 
 //*****************************************************************************
-// ƒXƒeƒBƒbƒN‚Ì•ûŒü‚Éi‚Ş
+// ã‚¹ãƒ†ã‚£ãƒƒã‚¯ã®æ–¹å‘ã«é€²ã‚€
 //*****************************************************************************
 static void ApplyMoveInput(Player& player)
 {
@@ -372,21 +482,21 @@ static void ApplyMoveInput(Player& player)
 }
 
 //*****************************************************************************
-// ƒWƒƒƒ“ƒvEƒ_ƒbƒVƒ…‚Ì‚Ú‚½‚ñ‚ğƒ`ƒFƒbƒN
-// Fó‘Ô‚ªØ‚è‘Ö‚í‚Á‚½‚çture‚ğ•Ô‚·
+// ã‚¸ãƒ£ãƒ³ãƒ—ãƒ»ãƒ€ãƒƒã‚·ãƒ¥ã®ã¼ãŸã‚“ã‚’ãƒã‚§ãƒƒã‚¯
+// ï¼šçŠ¶æ…‹ãŒåˆ‡ã‚Šæ›¿ã‚ã£ãŸã‚‰tureã‚’è¿”ã™
 //*****************************************************************************
 static bool CheckJumpAndDash(Player& player)
 {
-	//ƒWƒƒƒ“ƒv
-	//’n–Ê‚É‚¢‚é‚¾‚¯
+	//ã‚¸ãƒ£ãƒ³ãƒ—
+	//åœ°é¢ã«ã„ã‚‹æ™‚ã ã‘
 	if (IsJumpPressed() && player.GetIsGround())
 	{
 		StartJump(player);
 		return true;
 	}
 
-	//ƒ_ƒbƒVƒ…
-	//ƒN[ƒ‹ƒ^ƒCƒ€‚ªI‚í‚Á‚Ä‚¢‚½‚ç
+	//ãƒ€ãƒƒã‚·ãƒ¥
+	//ã‚¯ãƒ¼ãƒ«ã‚¿ã‚¤ãƒ ãŒçµ‚ã‚ã£ã¦ã„ãŸã‚‰
 	if (IsDashPressed() && player.GetDashCDTimer() <= 0.0f)
 	{
 		StartDash(player);
@@ -397,11 +507,11 @@ static bool CheckJumpAndDash(Player& player)
 }
 
 //*****************************************************************************
-// d—Í‰ÁZ
+// é‡åŠ›åŠ ç®—
 //*****************************************************************************
 static void ApplyGravity(Player& player)
 {
-	//ƒ_ƒbƒVƒ…’†‚Í—‚¿‚È‚¢
+	//ãƒ€ãƒƒã‚·ãƒ¥ä¸­ã¯è½ã¡ãªã„
 	if (player.GetState() == Player::DASH)
 	{
 		return;
@@ -413,7 +523,7 @@ static void ApplyGravity(Player& player)
 }
 
 //*****************************************************************************
-// ˆÚ“®‚Æ“–‚½‚è”»’è
+// ç§»å‹•ã¨å½“ãŸã‚Šåˆ¤å®š
 //*****************************************************************************
 static void MoveAndCollide(Player& player)
 {
@@ -480,7 +590,7 @@ static void MoveAndCollide(Player& player)
 }
 
 //*****************************************************************************
-// ’n–Ê‚Æ“–‚½‚Á‚Ä‚¢‚é‚©’²‚×‚é
+// åœ°é¢ã¨å½“ãŸã£ã¦ã„ã‚‹ã‹èª¿ã¹ã‚‹
 //*****************************************************************************
 static bool HitTestField(const XMFLOAT2& pos, const XMFLOAT2& size, XMFLOAT2& hitPos, XMFLOAT2& hitSize)
 {
@@ -497,9 +607,27 @@ static bool HitTestField(const XMFLOAT2& pos, const XMFLOAT2& size, XMFLOAT2& hi
 }
 
 //*****************************************************************************
-// ƒvƒŒƒCƒ„[‚ÌÀ•W‚ğæ“¾
+// ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã®åº§æ¨™ã‚’å–å¾—
 //*****************************************************************************
 const XMFLOAT2& PlayerGetPos()
 {
 	return g_player->GetPos();
+// ç‰¹æ®Šç§»å‹•é–‹å§‹ç”¨ã®é–¢æ•°
+//*****************************************************************************
+static void StartStretch(Player& player)
+{
+	player.SetStretchStart(player.GetPos());
+	player.SetStretchTip(player.GetStretchStart());
+	player.SetCurLength(0.0f);
+}
+
+//*****************************************************************************
+// å…ˆç«¯ã®åº§æ¨™è¨ˆç®—ç”¨é–¢æ•°
+//*****************************************************************************
+static void UpdateStretchTip(Player& player, const XMFLOAT2& direction)
+{
+	const XMFLOAT2 start = player.GetStretchStart();
+	const float length = player.GetCurLength();
+
+	player.SetStretchTip(XMFLOAT2{ start.x + direction.x * length,start.y + direction.y * length });
 }

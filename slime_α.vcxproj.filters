@@ -102,6 +102,9 @@
     <ClCompile Include="keyboard.cpp">
       <Filter>common\Input</Filter>
     </ClCompile>
+    <ClCompile Include="map.cpp">
+      <Filter>Game\Map</Filter>
+    </ClCompile>
     <ClCompile Include="controller.cpp">
       <Filter>common\Input</Filter>
     </ClCompile>
@@ -169,6 +172,9 @@
     </ClInclude>
     <ClInclude Include="keyboard.h">
       <Filter>common\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="map.h">
+      <Filter>Game\Map</Filter>
     </ClInclude>
     <ClInclude Include="controller.h">
       <Filter>common\Input</Filter>

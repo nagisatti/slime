@@ -28,3 +28,4 @@ void DrawSprite(XMFLOAT2 size, XMFLOAT4 col, int bno, int wc, int hc);//çsóÒégóp
 
 
 
+void DrawSpriteTxt(XMFLOAT2 pos, XMFLOAT2 size, float tx, float ty, float ts);

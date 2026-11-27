@@ -11,6 +11,7 @@
 #include <Xinput.h>
 #include "fade.h"
 #include "player.h"
+#include "enemy.h"
 
 static LIGHTOBJECT GlobalLight;  // �u���C�gOFF�v�𑗂邽�߂����Ɏc��
 static ID3D11ShaderResourceView* g_WhiteTex = nullptr;
@@ -20,6 +21,7 @@ void Game_Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 {
 	Camera2D_Initialize();   // 2D�J�����̏�����
 	PlayerInitialize();
+	EnemyInitialize();
 
 	TexMetadata metadata;
 	ScratchImage image;
@@ -27,11 +29,35 @@ void Game_Initialize(ID3D11Device* pDevice, ID3D11DeviceContext* pContext)
 	CreateShaderResourceView(pDevice, image.GetImages(), image.GetImageCount(), metadata, &g_WhiteTex);
 
 	GlobalLight.SetEnable(false);  // 2D�Ȃ̂Ń��C�g�͎g��Ȃ�
+	CreateEnemy(XMFLOAT2{ 1.0f, 1.0f }, DOG);//お試しで追加
+
+	//g_BgmID = LoadAudio("asset\\Audio\\bgm.wav");	//�T�E���h���[�h
+	//PlayAudio(g_BgmID, true);	//�Đ��J�n�i���[�v����j
+	//PlayAudio(g_BgmID);			//�Đ��J�n�i���[�v�Ȃ��j
+	//PlayAudio(g_BgmID, false);	//�Đ��J�n�i���[�v�Ȃ��j
+
+	GlobalLight.SetEnable(true);	//���C�gON
+
+	XMVECTOR dir = XMVectorSet(0.5f, -1.0f, 0.5f, 0.0f);//���̕���
+	dir = XMVector3Normalize(XMVector3Normalize(dir));
+	XMFLOAT4 d;
+	XMStoreFloat4(&d, dir);
+	GlobalLight.SetDirection(d);			//���̕����ݒ�
+
+	d = XMFLOAT4(0.8f, 0.8f, 0.8f, 1.0f);	//���C�g�F�ݒ�
+	GlobalLight.SetDiffuse(d);
+
+	d = XMFLOAT4(0.65f, 0.65f, 0.95f, 1.0f);	//���C�g�A���r�G���g�F�ݒ�
+	GlobalLight.SetAmbient(d);
+
+
+
 }
 
 void Game_Finalize()
 {
 	SAFE_RELEASE(g_WhiteTex);
+	EnemyFinalize();
 	PlayerFinalize();
 	Camera2D_Finalize();
 }
@@ -52,6 +78,7 @@ void Game_Update()
 	// �v���C���[��ǂ�������J����(�v���C���[�̍X�V���I������u��v�ɌĂ�)
 	SetCamera2DPosition(PlayerGetPos());
 	Camera2D_Update();   // O/P�L�[�ŃY�[���m�F���ł���
+	EnemyUpdate();
 }
 
 void Game_Draw()
