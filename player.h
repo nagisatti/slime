@@ -2,7 +2,7 @@
 *  ・playerヘッダ
 *    プレイヤーの状態を表す型と、初期化・更新に使う関数を宣言する。
 * 
-*    作成者 大塚  変更日 2026/11/24
+*    作成者 大塚  変更日 2026/11/26
 *    更新者 三代川  変更日 2026/11/21
 *   
 *
@@ -74,12 +74,17 @@ private:
 	bool m_isGrounded{ true };   //地面にいるか
 
 	// 水分ゲージで使用
-	float m_water{ 0 };           // プレイヤーの現在の水分量
-	float m_maxWater{ 100 };      // 最大水分量
-	float m_slowRateWater{ 0 };   // 水分減速率
-	float m_decayWater{ 0.5 };    // 水分減少率
-	float m_maxLength{ 5 };       // 身体を伸ばせる最大距離
-	float m_longerSpeed{ 1 };     // 身体を伸ばす速度
+	float m_water{ 0.0f };           // プレイヤーの現在の水分量
+	float m_maxWater{ 100.0f };      // 最大水分量
+	float m_slowRateWater{ 0.0f };   // 水分減速率
+	float m_decayWater{ 0.5f };      // 水分減少率
+	float m_maxLength{ 5.0f };       // 身体を伸ばせる最大距離
+	float m_longerSpeed{ 1.0f };     // 身体を伸ばす速度
+	float m_currentLength{ 0.0f };   // 現在の伸びた距離
+
+	XMFLOAT2 m_stretchStart{}; // 伸ばし始めた位置
+	XMFLOAT2 m_stretchTip{};   // 現在の先端の位置
+
 
 
 	// 移動
@@ -103,6 +108,10 @@ public:
 	float GetWater() const { return m_water; }
 	float GetMaxWater() const { return m_maxWater; }
 	float GetDecayWater() const { return m_decayWater; }
+	float GetCurLength() const { return m_currentLength; }
+	float GetLongerSpeed() const { return m_longerSpeed; }
+	XMFLOAT2 GetStretchStart() const { return m_stretchStart; }
+	XMFLOAT2 GetStretchTip() const { return m_stretchTip; }
 
 	XMFLOAT2 GetSize() const {
 		return XMFLOAT2{ PLAYER_BASE_SIZE.x * m_scale.x, PLAYER_BASE_SIZE.y * m_scale.y };
@@ -117,6 +126,9 @@ public:
 	void SetDirection(float direction) { m_direction = direction; }
 	void SetIsGround(bool isGround) { m_isGrounded = isGround; }
 	void SetWater(float water) { m_water = (std::clamp)(water, 0.0f, m_maxWater); }
+	void SetCurLength(float length){ m_currentLength = (std::clamp)(length, 0.0f, m_maxLength); }
+	void SetStretchStart(const XMFLOAT2& pos) { m_stretchStart = pos; }
+	void SetStretchTip(const XMFLOAT2& pos) { m_stretchTip = pos; }
 };
 
 //*****************************************************************************

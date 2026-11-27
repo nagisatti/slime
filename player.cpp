@@ -2,7 +2,7 @@
 *  ・player.cpp
 *    プレイヤーの動きや状態を書いてる
 *
-*    作成者 大塚  変更日 2026/11/25
+*    作成者 大塚  変更日 2026/11/26
 *    更新者 三代川  変更日 2026/11/22
 *
 *
@@ -24,11 +24,13 @@
 //*****************************************************************************
 // 定数
 //*****************************************************************************
+static constexpr int BUTTON_A{ 0 };// 切り離しボタン
 static constexpr int BUTTON_B{ 1 };//ジャンプボタン
 static constexpr int BUTTON_Y{ 3 };//ダッシュボタン
 static constexpr float COLLISION_MARGIN{ 0.01f };//横の当たり判定の時だけ、高さを少し小さくする量
 static constexpr XMFLOAT4 COLOR_PLAYER{ 1.0f, 1.0f, 1.0f, 1.0f };
 static constexpr XMFLOAT4 COLOR_BLOCK{ 0.5f, 0.5f, 0.5f, 1.0f };
+static constexpr float MIN_WATER_GAGE{ 20.0f }; // 特殊移動時に必要な最低限の水分量
 
 struct TestBlock
 {
@@ -69,14 +71,15 @@ static void StartDash(Player& player);
 static float GetInputX();
 static bool IsJumpPressed();
 static bool IsDashPressed();
-//--------------------水分ゲージ--------------------
-static void UpdateWaterGauge(Player& player);
 //--------------------その他の関数--------------------
 static void ApplyMoveInput(Player& player);
 static bool CheckJumpAndDash(Player& player);
 static void ApplyGravity(Player& player);
 static void MoveAndCollide(Player& player);
 static bool HitTestField(const XMFLOAT2& pos, const XMFLOAT2& size, XMFLOAT2& hitPos, XMFLOAT2& hitSize);
+static void ConsumeWater(Player& player, float stretchDistance);
+static void StartStretch(Player& player);
+static void UpdateStretchTip(Player& player, const XMFLOAT2& direction);
 
 
 //*****************************************************************************
@@ -137,7 +140,7 @@ void PlayerUpdate()
 		break;
 
 	case Player::WATERMOVE:
-		UpdateWaterGauge(player);
+		PlayerWaterMove(player);
 		break;
 	}
 
@@ -158,23 +161,6 @@ void PlayerDraw()
 
 	const Player& player = *g_player;
 
-	// 現在の水分量の割合
-	const float waterRatio = player.GetWater() / player.GetMaxWater();
-
-	const XMFLOAT2 gaugePos{ 100.0f, 50.0f };
-	const XMFLOAT2 gaugeSize{ 200.0f, 20.0f };
-
-	DrawSprite(gaugePos, gaugeSize,	XMFLOAT4{ 0.2f, 0.2f, 0.2f, 1.0f });
-
-	if (waterRatio > 0.0f)
-	{
-		const float width = gaugeSize.x * waterRatio;
-		const XMFLOAT2 fillPos{	gaugePos.x - (gaugeSize.x - width) * 0.5f, gaugePos.y};
-
-		DrawSprite(fillPos, XMFLOAT2{ width, gaugeSize.y },	XMFLOAT4{ 0.0f, 0.7f, 1.0f, 1.0f });
-	}
-
-
 	//仮の地面・壁
 	for (const TestBlock& block : TEST_BLOCKS)
 	{
@@ -183,6 +169,12 @@ void PlayerDraw()
 
 	//プレイヤー
 	DrawSprite(player.GetPos(), player.GetSize(), COLOR_PLAYER);
+
+	// 伸ばした体の描画
+	if (player.GetState() == Player::WATERMOVE)
+	{
+		DrawSprite(	player.GetStretchTip(), XMFLOAT2{ 10.0f, 10.0f }, XMFLOAT4{ 1.0f, 0.0f, 0.0f, 1.0f });
+	}
 }
 
 //*****************************************************************************
@@ -190,6 +182,9 @@ void PlayerDraw()
 //*****************************************************************************
 static void PlayerIdle(Player& player)
 {
+	const float x = GamepadGetRightAxisX();
+	const float y = GamepadGetRightAxisY();
+
 	//今の速度をコピー
 	XMFLOAT2 velocity = player.GetVelocity();
 
@@ -217,6 +212,17 @@ static void PlayerIdle(Player& player)
 	{
 		player.SetState(Player::MOVE);
 	}
+
+	// 右スティック動かしたら特殊移動へ
+	// 誤入力防止
+	if (x * x + y * y > 0.2f * 0.2f && player.GetWater() > MIN_WATER_GAGE)
+	{
+		StartStretch(player);
+		player.SetState(Player::WATERMOVE);
+		return;
+	}
+
+
 }
 
 //*****************************************************************************
@@ -224,12 +230,23 @@ static void PlayerIdle(Player& player)
 //*****************************************************************************
 static void PlayerMove(Player& player)
 {
+	const float x = GamepadGetRightAxisX();
+	const float y = GamepadGetRightAxisY();
+
 	//ジャンプ・ダッシュに切り替わったら、ここで終わる
 	if (CheckJumpAndDash(player))
 	{
 		return;
 	}
 
+	// 右スティック動かしたら特殊移動へ
+	// 誤入力防止
+	if (x * x + y * y > 0.2f * 0.2f && player.GetWater() > MIN_WATER_GAGE)
+	{
+		StartStretch(player);
+		player.SetState(Player::WATERMOVE);
+		return;
+	}
 
 	//何もしていなければ待機状態へ
 	if (GetInputX() == 0.0f)
@@ -304,9 +321,68 @@ static void StartJump(Player& player)
 //*****************************************************************************
 // 特殊移動の関数
 //*****************************************************************************
+// 特定の距離伸びたら切れるようにして、それ以外は自動で状態を変更するかどうか
 static void PlayerWaterMove(Player& player)
 {
+	// ガード処理
+	if (player.GetWater() < MIN_WATER_GAGE)
+	{
+		g_player->SetState(Player::IDLE);
+		return;
+	}
 
+	const float x = GamepadGetRightAxisX();
+	const float y = GamepadGetRightAxisY();
+
+	// スティックの入力方向
+	XMFLOAT2 direction{ 0.0f, 0.0f };
+
+	// 上・左・右のうち、入力の強い方向を選ぶ
+	// スティックは上が「-」、ゲーム座標は上が「+」
+	if (y < -0.2f && -y >= std::abs(x))
+	{
+		direction.y = 1.0f;
+	}
+	else if (std::abs(x) > 0.2f)
+	{
+		direction.x = x > 0.0f ? 1.0f : -1.0f;
+	}
+	else
+	{
+		return;
+	}
+
+	UpdateStretchTip(player, direction);
+
+	// 1フレ前の伸びた距離
+	float oldLength = player.GetCurLength();
+
+	player.SetCurLength( oldLength + player.GetLongerSpeed() * FRAME_TIME);
+
+	const float stretchDistance = (std::max)(0.0f, player.GetCurLength() - oldLength);
+
+	ConsumeWater(player, stretchDistance);
+
+
+	if (GamepadIsPressed(BUTTON_A))
+	{
+		player.SetState(Player::IDLE);
+		return;
+	}
+
+}
+
+//*****************************************************************************
+// 水分消費用関数
+//*****************************************************************************
+static void ConsumeWater(Player& player, float stretchDistance)
+{
+	// ガード処理
+	if (stretchDistance <= 0.0f) return;
+
+	player.SetWater(player.GetWater() - stretchDistance * player.GetDecayWater());
+
+	return;
 }
 
 //*****************************************************************************
@@ -531,14 +607,22 @@ static bool HitTestField(const XMFLOAT2& pos, const XMFLOAT2& size, XMFLOAT2& hi
 }
 
 //*****************************************************************************
-// 水分ゲージの状態管理関数
+// 特殊移動開始用の関数
 //*****************************************************************************
-static void UpdateWaterGauge(Player& player)
+static void StartStretch(Player& player)
 {
-	// 特殊移動中だけ消費する
-	if (player.GetState() == Player::WATERMOVE)
-	{
-		// 1秒に0.5消費
-		player.SetWater(player.GetWater() - player.GetDecayWater() * FRAME_TIME);
-	}
+	player.SetStretchStart(player.GetPos());
+	player.SetStretchTip(player.GetStretchStart());
+	player.SetCurLength(0.0f);
+}
+
+//*****************************************************************************
+// 先端の座標計算用関数
+//*****************************************************************************
+static void UpdateStretchTip(Player& player, const XMFLOAT2& direction)
+{
+	const XMFLOAT2 start = player.GetStretchStart();
+	const float length = player.GetCurLength();
+
+	player.SetStretchTip(XMFLOAT2{ start.x + direction.x * length,start.y + direction.y * length });
 }
