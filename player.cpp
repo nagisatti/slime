@@ -60,6 +60,9 @@ namespace
 
 }
 
+//プレイヤー専用のテクスチャ
+static ID3D11ShaderResourceView* g_playerTexture = nullptr;
+
 //*****************************************************************************
 // プロトタイプ宣言
 //*****************************************************************************
@@ -82,7 +85,7 @@ static bool CheckJumpAndDash(Player& player);
 static void ApplyGravity(Player& player);
 static void MoveAndCollide(Player& player);
 static bool HitTestField(const XMFLOAT2& pos, const XMFLOAT2& size, XMFLOAT2& hitPos, XMFLOAT2& hitSize);
-static bool HitEnemy(const XMFLOAT2& pos, const XMFLOAT2& size, XMFLOAT2& hitPos, XMFLOAT2& hitSize);
+static bool HitEnemy(const XMFLOAT2& pos, const XMFLOAT2& size);
 static void ConsumeWater(Player& player, float stretchDistance);
 static void StartStretch(Player& player);
 static void UpdateStretchTip(Player& player, const XMFLOAT2& direction);
@@ -101,6 +104,14 @@ void PlayerInitialize()
 	// 水分量の初期化
 	g_player->SetWater(100.0f);
 
+	TexMetadata metadata;
+	ScratchImage image;
+	HRESULT hr = LoadFromWICFile(L"asset\\texture\\fade.bmp", WIC_FLAGS_NONE, &metadata, image);
+
+	if (SUCCEEDED(hr))
+	{
+		hr = CreateShaderResourceView(Direct3D_GetDevice(), image.GetImages(), image.GetImageCount(), metadata, &g_playerTexture);
+	}
 }
 
 //*****************************************************************************
@@ -110,6 +121,9 @@ void PlayerFinalize()
 {
 	//Playerを破棄する
 	g_player.reset();
+
+	//テクスチャの開放
+	SAFE_RELEASE(g_playerTexture);
 }
 
 //*****************************************************************************
@@ -168,6 +182,10 @@ void PlayerDraw()
 	if (!g_player) return;
 
 	const Player& player = *g_player;
+
+	//テクスチャ
+	Direct3D_GetDeviceContext()->PSSetShaderResources(0, 1, &g_playerTexture);
+	SetBlendState(BLENDSTATE_ALFA);
 
 	//仮の地面・壁
 	for (const TestBlock& block : TEST_BLOCKS)
@@ -660,9 +678,30 @@ static bool HitTestField(const XMFLOAT2& pos, const XMFLOAT2& size, XMFLOAT2& hi
 //*****************************************************************************
 // 敵と当たっているか調べる
 //*****************************************************************************
-static bool HitEnemy(const XMFLOAT2& pos, const XMFLOAT2& size, XMFLOAT2& hitPos, XMFLOAT2& hitSize)
+static bool HitEnemy(const XMFLOAT2& pos, const XMFLOAT2& size)
 {
-	//GetEnemyでエネミーの先頭アドレスを受け取ってプレイヤーとの当たり判定を取る
+	//エネミー配列の先頭アドレスを受け取る
+	Enemy* const* pEnemy = GetEnemy();
+
+	//配列の全要素を順番に調べる
+	for (int i = 0; i < ENEMY_MAX; i++)
+	{
+		//使われていない（nullptr）場所は飛ばす
+		if (pEnemy[i] == nullptr)
+		{
+			continue;
+		}
+
+		//当たり判定チェック
+		if (CheckBoxCollider(pos, pEnemy[i]->GetPos(), size, pEnemy[i]->GetScale()))
+		{
+			//当たった
+			return true;
+		}
+	}
+
+	//当たっていない
+	return false;
 }
 
 //*****************************************************************************
